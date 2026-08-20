@@ -218,7 +218,11 @@ def _parse_publication_date(date_str: str | None) -> datetime | None:
 
 
 def _is_within_time_window(paper: dict, months: int) -> bool:
-    """Check if paper is within time window."""
+    """Check if paper is within time window. If months <= 0, include all papers."""
+    # Allow unlimited historical papers
+    if months <= 0:
+        return True
+
     pub_date = paper.get("publication_date") or paper.get("year")
 
     if not pub_date:

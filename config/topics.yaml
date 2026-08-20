@@ -2,7 +2,7 @@ topics:
   - name: "RNA-Protein Interactions"
     domain: "biophysics"
     description: "Recent advances in RNA-protein binding mechanisms"
-    time_window_months: 60
+    time_window_months: 0
     seed_queries:
       - "RNA protein binding interface"
       - "RNA-protein complex structure"
@@ -27,7 +27,7 @@ topics:
   - name: "Viral Capsid Assembly"
     domain: "virology"
     description: "Recent research on viral capsid and nucleocapsid assembly"
-    time_window_months: 60
+    time_window_months: 0
     seed_queries:
       - "viral capsid assembly"
       - "nucleocapsid RNA binding"
