@@ -35,7 +35,7 @@ class JournalClubMemory:
     def __init__(self, path: str | None = None):
         """Initialize memory, optionally from a file."""
         self.path = path or self._default_path()
-        
+
         # Initialize loggers first so they're always available
         self.save_logger = logging.getLogger("journal_club.memory.save")
         self.stat_logger = logging.getLogger("journal_club.memory.stats")
@@ -48,6 +48,7 @@ class JournalClubMemory:
                 "schema_version": "journal_club_memory.v1",
                 "statistics": {
                     "total_papers": 0,
+                    "analyzed_papers": 0,
                     "by_topic": {},
                     "by_domain": {},
                     "ids_counter": 0,
@@ -69,6 +70,7 @@ class JournalClubMemory:
                 "schema_version": "journal_club_memory.v1",
                 "statistics": {
                     "total_papers": 0,
+                    "analyzed_papers": 0,
                     "by_topic": {},
                     "by_domain": {},
                     "ids_counter": 0,
@@ -94,6 +96,7 @@ class JournalClubMemory:
                 "schema_version": "journal_club_memory.v1",
                 "statistics": {
                     "total_papers": 0,
+                    "analyzed_papers": 0,
                     "by_topic": {},
                     "by_domain": {},
                     "ids_counter": 0,
@@ -109,6 +112,7 @@ class JournalClubMemory:
         memory.setdefault("papers", [])
         memory.setdefault("statistics", {
             "total_papers": len(memory.get("papers", [])),
+            "analyzed_papers": sum(1 for p in memory.get("papers", []) if p.get("summary")),
             "by_topic": {},
             "by_domain": {},
             "ids_counter": 0,
@@ -194,6 +198,7 @@ class JournalClubMemory:
         total_papers = len(mem.get("papers", []))
         topics_counter = 0
         domains_counter = 0
+        analyzed_papers = 0
 
         for paper in mem.get("papers", []):
             topic = paper.get("topic_name")
@@ -203,8 +208,13 @@ class JournalClubMemory:
                 by_topic[topic] = by_topic.get(topic, 0) + 1
                 by_domain[domain] = by_domain.get(domain, 0) + 1
 
+            # Count papers with analysis (summary)
+            if paper.get("summary"):
+                analyzed_papers += 1
+
         mem["statistics"] = {
             "total_papers": total_papers,
+            "analyzed_papers": analyzed_papers,
             "by_topic": by_topic,
             "by_domain": by_domain,
             "ids_counter": mem["statistics"].get("ids_counter", 0),
@@ -393,6 +403,7 @@ class JournalClubMemory:
         if not mem.get("statistics"):
             return {
                 "total_papers": len(mem.get("papers", [])),
+                "analyzed_papers": sum(1 for p in mem.get("papers", []) if p.get("summary")),
                 "by_topic": {},
                 "by_domain": {},
                 "ids_counter": 0,
