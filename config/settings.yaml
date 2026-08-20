@@ -1,0 +1,42 @@
+# Journal Club Settings
+
+# Time window for recent papers (in months)
+default_time_window_months: 60
+
+# Streaming settings
+stream_interval_seconds: 30
+stream_batch_size: 20
+stream_max_idle_cycles: 0
+stream_max_cycles: 0
+
+# Deduplication settings
+dedup_abstract_prefix_len: 500
+
+# Analysis settings
+enable_gap_analysis: true
+enable_recommendations: true
+enable_quality_scoring: true
+
+# Output settings
+generate_markdown_reports: true
+generate_json_exports: true
+web_interface_enabled: true
+
+# LLM settings
+llm_temperature: 0.3
+llm_max_tokens: 2000
+
+# LoRA fine-tuning settings
+training:
+  enabled: false
+  min_papers_threshold: 200
+  auto_trigger: true
+  min_quality_score: 0.5
+  model_path: /scratch/fbsnpat/bot/VLAB2/hf_cache/hub/models--Qwen--Qwen2.5-32B-Instruct/snapshots/5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd
+  output_dir: training/journal_club_output
+
+# Fine-tuned model usage
+model:
+  use_finetuned: false
+  finetuned_model_path: training/journal_club_merged_model
+  fallback_to_base: true

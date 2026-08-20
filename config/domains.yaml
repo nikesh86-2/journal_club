@@ -1,0 +1,59 @@
+domains:
+  biophysics:
+    relevance_terms:
+      - "molecular dynamics"
+      - "docking"
+      - "binding affinity"
+      - "structure"
+      - "cryo-em"
+      - "x-ray crystallography"
+      - "nmr"
+      - "thermodynamics"
+    gap_categories:
+      - "methodology"
+      - "controls"
+      - "statistics"
+      - "reproducibility"
+    quality_metrics:
+      - "methodology_rigor"
+      - "statistical_power"
+      - "reproducibility_score"
+      - "experimental_validation"
+
+  virology:
+    relevance_terms:
+      - "virus"
+      - "viral"
+      - "capsid"
+      - "nucleocapsid"
+      - "assembly"
+      - "packaging"
+      - "virion"
+      - "infection"
+    gap_categories:
+      - "methodology"
+      - "controls"
+      - "statistics"
+      - "reproducibility"
+    quality_metrics:
+      - "methodology_rigor"
+      - "statistical_power"
+      - "reproducibility_score"
+      - "biological_relevance"
+
+  general:
+    relevance_terms:
+      - "research"
+      - "study"
+      - "experiment"
+      - "analysis"
+      - "investigation"
+    gap_categories:
+      - "methodology"
+      - "controls"
+      - "statistics"
+      - "reproducibility"
+    quality_metrics:
+      - "methodology_rigor"
+      - "statistical_power"
+      - "reproducibility_score"

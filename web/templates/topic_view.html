@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ topic_name }} - Journal Club</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        .back-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .stats {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .paper-list {
+            display: grid;
+            gap: 20px;
+        }
+        .paper-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .paper-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .paper-title a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .paper-title a:hover {
+            text-decoration: underline;
+        }
+        .paper-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .paper-summary {
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .quality-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        .quality-high {
+            background: #d4edda;
+            color: #155724;
+        }
+        .quality-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .quality-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .gap-tags {
+            margin-top: 10px;
+        }
+        .gap-tag {
+            display: inline-block;
+            background: #e2e3e5;
+            color: #383d41;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .export-buttons {
+            margin-top: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .no-papers {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <a href="/" class="back-link">← Back to Dashboard</a>
+                <h1>{{ topic_name }}</h1>
+            </div>
+            <div class="export-buttons">
+                <a href="/export/{{ topic_name }}/markdown" class="btn">Download Markdown</a>
+                <a href="/export/{{ topic_name }}/json" class="btn btn-secondary">Download JSON</a>
+            </div>
+        </div>
+
+        <div class="stats">
+            <strong>{{ paper_count }}</strong> papers in this topic
+        </div>
+
+        {% if papers %}
+        <div class="paper-list">
+            {% for paper in papers %}
+            <div class="paper-card">
+                <div class="paper-title">
+                    <a href="/paper/{{ paper.doi or paper.title.replace(' ', '_') }}">
+                        {{ paper.title }}
+                    </a>
+                </div>
+                <div class="paper-meta">
+                    {% if paper.year %}{{ paper.year }} | {% endif %}
+                    {% if paper.authors %}{{ paper.authors }}{% endif %}
+                </div>
+                
+                {% if paper.summary %}
+                <div class="paper-summary">
+                    {{ paper.summary[:300] }}{% if paper.summary|length > 300 %}...{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if paper.quality_scores and paper.quality_scores.overall_quality %}
+                <div>
+                    {% if paper.quality_scores.overall_quality >= 0.8 %}
+                    <span class="quality-badge quality-high">Quality: {{ paper.quality_scores.overall_quality }}</span>
+                    {% elif paper.quality_scores.overall_quality >= 0.6 %}
+                    <span class="quality-badge quality-medium">Quality: {{ paper.quality_scores.overall_quality }}</span>
+                    {% else %}
+                    <span class="quality-badge quality-low">Quality: {{ paper.quality_scores.overall_quality }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if paper.gap_analysis %}
+                <div class="gap-tags">
+                    {% if paper.gap_analysis.methodology %}
+                    {% for gap in paper.gap_analysis.methodology[:2] %}
+                    <span class="gap-tag">Methodology: {{ gap[:30] }}...</span>
+                    {% endfor %}
+                    {% endif %}
+                    {% if paper.gap_analysis.statistics %}
+                    {% for gap in paper.gap_analysis.statistics[:2] %}
+                    <span class="gap-tag">Statistics: {{ gap[:30] }}...</span>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-papers">
+            <h2>No papers found for this topic yet</h2>
+            <p>Papers will appear here as they are ingested by the streaming agent.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

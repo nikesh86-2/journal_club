@@ -1,0 +1,49 @@
+topics:
+  - name: "RNA-Protein Interactions"
+    domain: "biophysics"
+    description: "Recent advances in RNA-protein binding mechanisms"
+    time_window_months: 60
+    seed_queries:
+      - "RNA protein binding interface"
+      - "RNA-protein complex structure"
+      - "RNA recognition motifs"
+    domain_terms:
+      target_classes:
+        - "rna-binding"
+        - "ribonucleoprotein"
+        - "rna-protein"
+        - "rrm"
+        - "kh domain"
+      motif_terms:
+        - "stem-loop"
+        - "hairpin"
+        - "binding interface"
+        - "recognition motif"
+      avoid_terms:
+        - "dna-binding"
+        - "transcription factor"
+        - "chromatin"
+
+  - name: "Viral Capsid Assembly"
+    domain: "virology"
+    description: "Recent research on viral capsid and nucleocapsid assembly"
+    time_window_months: 60
+    seed_queries:
+      - "viral capsid assembly"
+      - "nucleocapsid RNA binding"
+      - "virus packaging signal"
+    domain_terms:
+      target_classes:
+        - "capsid"
+        - "nucleocapsid"
+        - "coat protein"
+        - "nucleoprotein"
+      motif_terms:
+        - "stem-loop"
+        - "packaging signal"
+        - "assembly domain"
+        - "rna binding"
+      avoid_terms:
+        - "spike"
+        - "fusion"
+        - "envelope"

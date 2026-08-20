@@ -1,0 +1,67 @@
+# Environment variables (contains API keys)
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# SLURM job logs
+*.err
+*.out
+
+# Cache and data directories
+cache/
+output/
+logs/
+results/
+
+# Literature memory (user data)
+literature_memory.json
+
+# Model weights and offload directories
+hf_offload/
+llama-8b/
+mistral-7b/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# Training artifacts
+training/checkpoints/
+training/runs/
+training/wandb/
+
+# Large files that shouldn't be in git
+*.faiss
+*.pkl
+*.bin
+*.safetensors
+
+# Workspace files
+*.code-workspace

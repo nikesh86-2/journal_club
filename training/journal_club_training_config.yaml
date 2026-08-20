@@ -1,0 +1,46 @@
+# Journal Club LoRA Fine-Tuning Configuration
+# Adapted from VLAB2's training config for literature domain
+
+# Base model (same as VLAB2)
+model_name: /scratch/fbsnpat/bot/VLAB2/hf_cache/hub/models--Qwen--Qwen2.5-32B-Instruct/snapshots/5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd
+
+# Output directories
+output_dir: training/journal_club_output
+hf_dataset_path: training/journal_club_hf_dataset
+
+# Sequence length
+max_length: 4096
+
+# Training parameters
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  epochs: 2  # More epochs for literature domain
+  learning_rate: 1.5e-5  # Slightly lower for stability
+  warmup_steps: 100
+  save_steps: 50
+  logging_steps: 5
+  bf16: true
+  gradient_checkpointing: true
+  max_grad_norm: 1.0
+
+# LoRA configuration
+lora:
+  r: 16  # Rank of update matrices
+  alpha: 32  # Scaling factor
+  dropout: 0.1  # Higher dropout for literature domain
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# Dataset configuration
+dataset:
+  train_split: train
+  test_split: test
