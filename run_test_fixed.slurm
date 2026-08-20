@@ -3,7 +3,7 @@
 #SBATCH --job-name=journal_club_test
 #SBATCH --output=journal_club_test_%j.out
 #SBATCH --error=journal_club_test_%j.err
-#SBATCH --time=02:00:00
+#SBATCH --time=08:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --mem=64G
@@ -21,7 +21,7 @@ export LD_LIBRARY_PATH="/scratch/fbsnpat/envs/biophysics-research-agent-new/lib:
 
 # Optimization settings
 export JOURNAL_CLUB_MAX_ANALYSIS_WORKERS=2
-export JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE=1
+export JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE=0
 export JOURNAL_CLUB_FORCE_CPU_OFFLOAD=1
 
 echo "=== Journal Club Test Run ==="
@@ -67,19 +67,20 @@ memory.save()
 print('Cleanup complete!')
 PYTHON_SCRIPT
 
-# Step 2: Run streaming (1 cycle only)
+# Step 2: Run streaming (more cycles for more papers)
 echo ""
-echo "Step 2: Running streaming (1 cycle)..."
-JC_STREAM_CYCLES=1 JC_STREAM_INTERVAL=30 bash scripts/run_journal_club.sh streaming
+echo "Step 2: Running streaming (5 cycles for more papers)..."
+JC_STREAM_CYCLES=5 JC_STREAM_INTERVAL=60 bash scripts/run_journal_club.sh streaming
 
 # Step 3: Run analysis
 echo ""
 echo "Step 3: Running analysis..."
 bash scripts/run_journal_club.sh analysis
 
-# Step 4: Generate reports (skip if there are issues)
+# Step 4: Generate reports
 echo ""
-echo "Step 4: Skipping reports generation (known issues)..."
+echo "Step 4: Generating reports..."
+bash scripts/run_journal_club.sh reports
 
 # Step 5: Show final stats
 echo ""
