@@ -111,21 +111,65 @@ GET http://localhost:5000/api/stats
 GET http://localhost:5000/api/papers?topic=RNA-Protein%20Interactions&limit=50
 ```
 
-### `/api/paper/<paper_id>`
+### `/api/paper/<path:paper_id>`
 
 **GET** - API endpoint for single paper
 
 **Parameters:**
-- `paper_id`: Paper DOI or title
+- `paper_id`: Paper DOI, PMID, or title (supports forward slashes in DOIs)
 
 **Response:** JSON paper dict
 
 **Example:**
 ```python
-GET http://localhost:5000/api/paper/10.1234%2Fexample.2024.001
+GET http://localhost:5000/api/paper/10.1101/2023.12.30.573520
 ```
 
-### `/export/topic/<topic_name>`
+### `/api/config/sources`
+
+**GET** - Retrieve active literature search API, available APIs, and LLM inference settings.
+**POST** - Update API providers, time window, batch size, LLM server URL, temperature, and tokens.
+
+### `/api/config/test-source`
+
+**POST** - Test live connectivity to the LLM inference server and Europe PMC preprint search API.
+
+### `/api/config/topics`
+
+**GET** - Retrieve all configured research topics with seed queries and domain terms.
+**POST** - Add or update a topic in `config/topics.yaml`.
+
+### `/api/config/topics/<path:topic_name>`
+
+**DELETE** - Remove a topic from `config/topics.yaml`.
+
+### `/api/config/domains`
+
+**GET** - Retrieve configured domains, relevance terms, gap categories, and quality metrics.
+**POST** - Add or update a domain in `config/domains.yaml`.
+
+### `/api/ingest`
+
+**POST** - Trigger immediate, on-demand literature search & ingestion for a topic or custom search query.
+
+### `/api/trigger-analysis`
+
+**POST** - Trigger batch analysis on unanalyzed papers across topics
+
+**Response:** JSON status
+```json
+{
+  "status": "success",
+  "analyzed_papers": 3
+}
+```
+
+**Example:**
+```python
+POST http://localhost:5000/api/trigger-analysis
+```
+
+### `/export/<topic_name>/markdown`
 
 **GET** - Export topic report as markdown
 
@@ -136,7 +180,32 @@ GET http://localhost:5000/api/paper/10.1234%2Fexample.2024.001
 
 **Example:**
 ```python
-GET http://localhost:5000/export/topic/RNA-Protein%20Interactions
+GET http://localhost:5000/export/RNA-Protein%20Interactions/markdown
+```
+
+### `/export/<topic_name>/json`
+
+**GET** - Export topic data as JSON
+
+**Parameters:**
+- `topic_name`: Topic name
+
+**Response:** JSON file download
+
+**Example:**
+```python
+GET http://localhost:5000/export/RNA-Protein%20Interactions/json
+```
+
+### `/export/summary/markdown`
+
+**GET** - Export summary report as markdown
+
+**Response:** Markdown file download
+
+**Example:**
+```python
+GET http://localhost:5000/export/summary/markdown
 ```
 
 ### `/export/paper/<paper_id>`

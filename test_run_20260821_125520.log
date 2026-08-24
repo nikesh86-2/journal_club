@@ -1,0 +1,106 @@
+Activating conda environment: journal_club
+=== Journal Club Test Run ===
+Starting at: Fri 21 Aug 12:55:25 BST 2026
+
+Step 1: Cleaning up duplicates...
+Before cleanup: 5 papers
+Unique DOIs: 5
+Stats: {'total_papers': 5, 'analyzed_papers': 5, 'by_topic': {'RNA-Protein Interactions': 5}, 'by_domain': {'biophysics': 5}, 'ids_counter': 0}
+After cleanup: 5 papers
+Cleanup complete!
+
+Step 2: Running streaming (5 cycles for more papers)...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Starting literature streaming (cycles=3, interval=30s)...
+2026-08-21 12:55:25,739 [journal_club.streaming] INFO: Streaming worker active for topic: RNA-Protein Interactions (domain: biophysics)
+2026-08-21 12:55:25,739 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: RNA-Protein Interactions
+2026-08-21 12:55:25,739 [journal_club.streaming] INFO: Streaming worker active for topic: Viral Capsid Assembly (domain: virology)
+2026-08-21 12:55:25,739 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: Viral Capsid Assembly
+2026-08-21 12:55:25,739 [journal_club.streaming] INFO: Started streaming for 2 topics
+2026-08-21 12:55:31,702 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 6
+2026-08-21 12:55:31,702 [journal_club.memory.save] INFO: Successfully appended paper Post-translational modification fidelity of recombinant huma
+2026-08-21 12:55:31,702 [journal_club.analyzer] INFO: Loading LLM client (cache miss): base_/home/nike/models/qwen3.6-35b-a3b
+2026-08-21 12:55:31,702 [journal_club.analyzer] INFO: Using external llama-server at: http://localhost:8080
+2026-08-21 12:55:32,176 [journal_club.streaming] INFO: Streaming cycle 1: fetched 4 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 1)
+2026-08-21 12:56:09,076 [journal_club.streaming] INFO: Streaming cycle 2: fetched 2 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 2)
+2026-08-21 12:56:47,688 [journal_club.streaming] INFO: Streaming cycle 3: fetched 6 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 3)
+2026-08-21 12:57:23,293 [journal_club.streaming] INFO: Streaming cycle 4: fetched 6 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 4)
+2026-08-21 12:57:46,778 [journal_club.analyzer] WARNING: Llama server returned empty response. Full response: {'choices': [{'finish_reason': 'length', 'index': 0, 'message': {'role': 'assistant', 'content': '', 'reasoning_content': 'Here\'s a thinking process:\n\n1.  **Analyze User Input:**\n   - **Paper Title:** Post-translational modification fidelity of recombinant human lactopontin expressed in Kluyveromyces lactis\n   - **Abstract:** Describes production of recombinant human lactopontin (rhLPN) in *K. lactis*, comparison with native human lactopontin (nhLPN) from human milk. Uses mass spectrometry (peptide mapping, middle-up), glycosylation profiling, functional assays (iron binding), and pilot scale consistency (5 batches). Claims structural/functional similarity and process reproducibility.\n   - **Task:** Identify gaps/weaknesses in 4 categories: Methodology gaps, Missing controls, Statistical issues, Reproducibility concerns.\n   - **Output Format:** JSON object with keys: methodology, controls, statistics, reproducibility. Each key maps to a list of 2-3 specific issues or "None identified".\n\n2.  **Deconstruct Abstract & Identify Potential Issues per Category:**\n\n   *Methodology gaps:*\n   - The abstract mentions "Mass spectrometry-based peptide mapping" and "Middle-up analyses" but lacks details on the specific MS techniques, fragmentation methods, or software used for PTM identification.\n   - "Functional assessment demonstrated substantially greater iron binding..." - How was iron binding measured? (e.g., ICP-MS, colorimetric assay, equilibrium dialysis?) No methodological detail is provided.\n   - Glycosylation profiling mentions "low-complexity O-glycoforms localized to the N-terminus" but doesn\'t specify how O-glycosylation was enriched/analyzed (e.g., PNGase F vs. PNGase A, ELC, lectin affinity, specific glycoproteomics workflow).\n   - Pilot scale consistency is based on only 5 batches. Is that enough to claim "highly consistent" and "robust process reproducibility"? Might be a methodological/design limitation.\n   - *Selection for output:* I\'ll pick 2-3 strong ones: Lack of detail on iron binding assay methodology; insufficient description of glycoproteomics workflow for O-glycan analysis; reliance on only 5 pilot batches to claim robust reproducibility without statistical process control metrics.\n\n   *Missing controls:*\n   - Comparison with nhLPN is mentioned, but what about a negative control for the iron binding assay? (e.g., unmodified LPN, BSA, or a known iron-binding protein like lactoferrin).\n   - For phosphorylation/glycosylation analysis, were there appropriate standards or spiked-in internal standards for quantification?\n   - Dephosphorylated rhLPN was used as a comparison, but what about a non-recombinant control for the expression system? Or a mock-transfected *K. lactis* lysate to rule out host-derived contaminants affecting MS or functional assays?\n   - *Selection for output:* Lack of host-cell protein (HCP) or *K. lactis* lysate control to rule out background interference in MS and functional assays; absence of a positive control for iron binding (e.g., lactoferrin or a known chelator) to contextualize the "substantially greater" claim; no negative control for glycosylation (e.g., deglycosylated rhLPN) to confirm O-glycan contribution to observed properties.\n\n   *Statistical issues:*\n   - "Substantially greater iron binding" - No p-values, confidence intervals, or effect sizes reported. How was "substantially" quantified?\n   - "Highly consistent" across 5 batches - No measures of variance (SD, CV%) or statistical tests for batch-to-batch variability.\n   - Sample size for functional assays isn\'t mentioned. Were iron binding experiments done in triplicate? Biological vs technical replicates?\n   - *Selection for output:* Lack of reported variance measures (e.g., standard deviation, coefficient of variation) for batch-to-batch consistency claims; absence of statistical testing (p-values, confidence intervals) for the "substantially greater" iron binding results; unclear replication strategy (biological vs. technical replicates) for functional assays.\n\n   *Reproducibility concerns:*\n   - Abstract lacks specific MS parameters, software versions, or data processing pipelines.\n   - No mention of data deposition (e.g., ProteomeXchange, PRIDE) or raw data availability.\n   - Pilot scale details (bioreactor conditions, media, induction parameters) are omitted, making scale-up reproduction difficult.\n   - *Selection for output:* Absence of raw mass spectrometry data deposition or accession numbers in public repositories; insufficient detail on bioreactor operating parameters (e.g., DO, pH, feed strategy, induction timing) required to replicate pilot-scale production; lack of specification for data analysis software, algorithms, or threshold criteria used for PTM identification and quantification.\n\n3.  **Refine & Format Output:**\n   Check against constraints:\n   - JSON object with keys: methodology, controls, statistics, reproducibility\n   - Each key: list of strings (2-3 issues or "None identified")\n   - Ensure tone is critical and methodological/statistical focus.\n   - Verify each point is specific to the abstract provided.\n\n   *Methodology:*\n   - "Lack of detailed description for the iron-binding assay methodology (e.g., equilibrium conditions, detection method, kinetic vs. endpoint measurement)"\n   - "Insufficient specification of the glycoproteomics workflow, particularly O-glycan enrichment and fragmentation strategies, to validate the claimed low-complexity N-terminal O-glycoforms"\n   - "Reliance on only five pilot-scale batches to assert robust process reproducibility without incorporating statistical process control metrics or longer-term stability data"\n\n   *Controls:*\n   - "Absence of a host-cell background control (e.g., uninduced *K. lactis* lysate or mock culture) to rule out interference from host-derived proteins or metabolites in MS and functional assays"\n   - "No positive control for iron-binding capacity (e.g., lactoferrin or a known mineral chelator) to contextualize the magnitude of the observed binding differences"\n   - "Lack of a deglycosylated rhLPN control to isolate and confirm the specific contribution of O-glycosylation versus phosphorylation to structural and functional properties"\n\n   *Statistics:*\n   - "Claims of \'substantially greater\' iron binding and \'highly consistent\' batch distributions lack reported variance metrics (e.g., standard deviation, coefficient of variation) and formal statistical testing"\n   - "Unclear replication design for functional assays, with no distinction between biological and technical replicates or reported sample sizes"\n   - "Absence of confidence intervals or effect sizes for comparative PTM distributions, making it impossible to assess the statistical significance of the claimed structural fidelity"\n\n   *Reproducibility:*\n   - "No mention of public data deposition (e.g., ProteomeXchange/PRIDE accession numbers) for raw and processed mass spectrometry datasets"\n   - "Insufficient detail on upstream bioprocessing parameters (e.g., media composition, induction strategy, harvest timing, purification steps) required to replicate the *K. lactis* expression system"\n   - "Lack of specification for data analysis pipelines, software versions, and threshold criteria used for peptide identification, phosphoform deconvolution, and glycoform quantification"\n\n   All points are specific, grounded in standard scientific critique practices, and directly address the abstract\'s claims. They fit the requested format. I will generate the JSON.✅\n   Self-Correction/Verification during thought:\n   - Check format: JSON object with exactly those keys. Each value is a list of strings.\n   - Check content: Matches abstract claims. Critiques are standard for bioprocessing/PTM papers.\n   - Ensure tone is objective and critical.\n   - All constraints met. Ready. \n   Output matches the refined version.✅\n   Proceeds. \n   Output Generation. \n   ```json\n   {\n     "methodology": [\n       "Lack of detailed description for the iron-binding assay methodology (e.g., equilibrium conditions, detection method, kinetic vs. endpoint measurement)",\n       "Insufficient specification of the glycoproteomics workflow, particularly O-glycan enrichment and fragmentation strategies, to validate the claimed low-complexity N-terminal O-glycoforms",\n       "Reliance on only five pilot-scale batches to assert robust process reproducibility without incorporating statistical process control metrics or longer-term stability data"\n     ],\n     "controls": [\n       "Absence of a host-cell background control (e.g., uninduced K. lactis lysate or mock culture) to rule out interference from host-derived proteins or metabolites in MS and functional assays",\n       "No positive control for iron-binding capacity (e.g., lactoferrin or a known mineral chelator) to contextualize the magnitude of the observed binding differences",\n       "Lack of a deglycosylated rhLPN control to isolate and confirm the specific contribution of O-glycosylation versus phosphorylation to structural and functional properties"\n     ],\n     "statistics": [\n       "Claims of \'substantially greater\' iron binding and \'highly consistent\' batch distributions lack reported variance metrics (e.g., standard deviation, coefficient'}}], 'created': 1787313466, 'model': '/home/nike/models/qwen3.6-35b-a3b/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf', 'system_fingerprint': 'b10058-788e07dc9', 'object': 'chat.completion', 'usage': {'completion_tokens': 2000, 'prompt_tokens': 506, 'total_tokens': 2506, 'prompt_tokens_details': {'cached_tokens': 0}}, 'id': 'chatcmpl-xoUogWJpcxkLSbO156NnPdDmP2yBLhi9', 'timings': {'cache_n': 0, 'prompt_n': 506, 'prompt_ms': 3262.302, 'prompt_per_token_ms': 6.447237154150198, 'prompt_per_second': 155.10519872163889, 'predicted_n': 2000, 'predicted_ms': 82013.026, 'predicted_per_token_ms': 41.006513, 'predicted_per_second': 24.386370038340008}}
+2026-08-21 12:57:46,778 [journal_club.analyzer] WARNING: JSON parsing failed (attempt 1/3): Expecting value: line 1 column 1 (char 0)
+2026-08-21 12:57:46,778 [journal_club.analyzer] WARNING: JSON parsing failed (attempt 2/3): Expecting value: line 1 column 1 (char 0)
+2026-08-21 12:57:46,778 [journal_club.analyzer] WARNING: JSON parsing failed (attempt 3/3): Expecting value: line 1 column 1 (char 0)
+2026-08-21 12:57:46,778 [journal_club.analyzer] WARNING: Failed to parse after 3 attempts, using rule-based fallback
+2026-08-21 12:57:46,778 [journal_club.analyzer] WARNING: All parsing attempts failed, using rule-based fallback
+2026-08-21 12:57:46,779 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 6
+2026-08-21 12:57:46,780 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 7
+2026-08-21 12:57:46,780 [journal_club.memory.save] INFO: Successfully appended paper New Approaches to Fast Plate Composition, with a Software Im
+2026-08-21 12:57:57,085 [journal_club.streaming] INFO: Streaming cycle 5: fetched 0 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 5)
+2026-08-21 12:58:35,441 [journal_club.streaming] INFO: Streaming cycle 6: fetched 2 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 6)
+2026-08-21 12:59:09,745 [journal_club.streaming] INFO: Streaming cycle 7: fetched 6 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 7)
+2026-08-21 12:59:45,599 [journal_club.streaming] INFO: Streaming cycle 8: fetched 4 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 8)
+2026-08-21 13:00:05,979 [journal_club.analyzer] WARNING: JSON parsing failed (attempt 1/3): Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+2026-08-21 13:00:05,984 [journal_club.analyzer] WARNING: JSON parsing failed (attempt 2/3): Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+2026-08-21 13:00:05,984 [journal_club.analyzer] WARNING: JSON parsing failed (attempt 3/3): Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+2026-08-21 13:00:05,984 [journal_club.analyzer] WARNING: Failed to parse after 3 attempts, using rule-based fallback
+2026-08-21 13:00:05,984 [journal_club.analyzer] WARNING: All parsing attempts failed, using rule-based fallback
+2026-08-21 13:00:05,986 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 7
+2026-08-21 13:00:05,987 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 8
+2026-08-21 13:00:05,987 [journal_club.memory.save] INFO: Successfully appended paper Automating Biomedical Knowledge Graph Construction For Conte
+2026-08-21 13:00:25,740 [journal_club.analyzer] INFO: LLM clients cleaned up successfully (0 removed, 1 preserved)
+Started 2 topic streams
+  Waiting for streaming... (1/5 intervals elapsed, 2 active)
+  Waiting for streaming... (2/5 intervals elapsed, 2 active)
+  Waiting for streaming... (3/5 intervals elapsed, 2 active)
+  Waiting for streaming... (4/5 intervals elapsed, 2 active)
+  Waiting for streaming... (5/5 intervals elapsed, 2 active)
+Stopping all streams...
+Streaming complete.
+
+Step 2.5: Running post-streaming deduplication...
+Removed 3 duplicate papers after streaming
+Removed 0 misclassified papers from wrong topics
+
+Step 3: Running analysis...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Running paper analysis...
+Total papers in memory: 5
+No unanalyzed papers for topic: RNA-Protein Interactions
+Analysis complete!
+
+Step 4: Generating reports...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Generating reports...
+Generated 2 reports
+
+Step 5: Final statistics...
+Journal Club Memory Summary (5 papers)
+--------------------------------------------
+  Total papers: 5
+  Topics: 1
+  Domains: 1
+
+Topics:
+  - RNA-Protein Interactions (5 papers)
+
+Domains:
+  - biophysics (5 papers)
+
+Analyzed papers: 5/5
+
+=== Test Run Complete ===
+Finished at: Fri 21 Aug 13:00:26 BST 2026

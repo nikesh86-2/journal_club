@@ -53,6 +53,7 @@ except ImportError:
     Document = None
 
 from .literature_memory import JournalClubMemory
+from .paper_analyzer import cleanup_llm_clients
 
 log = logging.getLogger("journal_club.streaming")
 
@@ -89,6 +90,37 @@ STREAM_MAX_CYCLES = int(os.getenv("JOURNAL_CLUB_STREAM_MAX_CYCLES", "0"))
 DEDUP_ABSTRACT_PREFIX_LEN = int(os.getenv("JOURNAL_CLUB_DEDUP_ABSTRACT_PREFIX_LEN", "500"))
 
 DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "12"))
+
+# ---------------------------------------------------------------------------
+# Hard-reject terms — papers matching any of these are never relevant
+# (Ported from VLAB2 streaming_literature_agent.BAD_TERMS)
+# ---------------------------------------------------------------------------
+
+BAD_TERMS = [
+    "multi-agent reinforcement learning",
+    "multi-agent llm",
+    "large language model",
+    "llm planning",
+    "jailbreak",
+    "manufacturing systems",
+    "pose graph",
+    "clinical trial multi-agent",
+    "robot",
+    "slam",
+    "phosphate glass",
+    "plantaricin",
+    "anti-cancer",
+    "anticancer",
+    "machine learning pipeline",
+    "deep learning framework",
+    "neural network architecture",
+    "natural language processing",
+    "computer vision",
+    "autonomous driving",
+    "knowledge graph",
+    "plate composition",
+    "lab automation",
+]
 
 # ---------------------------------------------------------------------------
 # Domain configuration
@@ -245,32 +277,55 @@ def is_domain_relevant(
     domain: str,
     topic_terms: dict | None = None,
 ) -> bool:
-    """Check if paper is relevant to domain/topic."""
+    """Check if paper is relevant to domain/topic using AND logic.
+
+    Requires BOTH:
+      1. At least one topic-specific term match (target_classes or motif_terms)
+      2. At least one domain-level relevance term match
+    AND none of the avoid_terms or BAD_TERMS.
+
+    This mirrors the VLAB2 is_biomed_relevant() two-tier gate that prevents
+    generic biology papers from passing on a single common keyword.
+    """
     if not text:
         return False
 
     t = text.lower()
 
-    # Get domain terms
-    domain_terms = get_domain_terms(domain)
-    relevance_terms = list(domain_terms.get("relevance_terms", []))
-
-    # Add topic-specific terms if provided
-    if topic_terms:
-        relevance_terms.extend(topic_terms.get("target_classes", []))
-        relevance_terms.extend(topic_terms.get("motif_terms", []))
-
-    # Check for avoid terms first
-    avoid_terms = topic_terms.get("avoid_terms", []) if topic_terms else []
-    if any(term in t for term in avoid_terms):
+    # Hard reject: BAD_TERMS
+    if any(term in t for term in BAD_TERMS):
+        log.debug("Rejected by BAD_TERMS: %s", text[:80])
         return False
 
-    # If no specific relevance terms are defined, pass by default
-    if not relevance_terms:
-        return True
+    # Hard reject: topic avoid_terms
+    avoid_terms = topic_terms.get("avoid_terms", []) if topic_terms else []
+    if any(term.lower() in t for term in avoid_terms):
+        log.debug("Rejected by avoid_terms: %s", text[:80])
+        return False
 
-    # Check for relevance terms
-    return any(term.lower() in t for term in relevance_terms)
+    # Topic-specific terms (core identifiers for this topic)
+    target_classes = topic_terms.get("target_classes", []) if topic_terms else []
+    motif_terms_list = topic_terms.get("motif_terms", []) if topic_terms else []
+
+    # Domain-level terms (broader field relevance)
+    domain_data = get_domain_terms(domain)
+    domain_relevance = domain_data.get("relevance_terms", [])
+
+    has_topic_match = any(term.lower() in t for term in target_classes + motif_terms_list)
+    has_domain_match = any(term.lower() in t for term in domain_relevance)
+
+    # AND gate: require topic match AND domain match (when both are configured)
+    if target_classes or motif_terms_list:
+        if domain_relevance:
+            return has_topic_match and has_domain_match
+        return has_topic_match
+
+    # Fallback: only domain terms configured
+    if domain_relevance:
+        return has_domain_match
+
+    # No terms configured — pass by default
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -357,9 +412,6 @@ def append_to_faiss(docs: List) -> int:
             except Exception as e:
                 log.warning("Creating new FAISS index at %s: %s", index_path, e)
 
-                # Create empty Document templates if needed for the vector store
-                dummy_docs = [Document("dummy_title", {})]
-
                 db = FAISS.from_documents(docs, embeddings)
                 db.save_local(str(index_path))
                 return len(docs)
@@ -371,86 +423,96 @@ def append_to_faiss(docs: List) -> int:
 # Streaming worker
 # ---------------------------------------------------------------------------
 
-def fetch_biorxiv_preprints(query: str, limit: int = 10) -> List[dict]:
-    """Fetch recent preprints from BioRxiv/MedRxiv API."""
+def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int = 12) -> List[dict]:
+    """Fetch papers from Europe PMC using full-text search.
+
+    Europe PMC indexes bioRxiv/medRxiv preprints and supports proper Boolean
+    search, unlike the bioRxiv /details/ endpoint which only returns
+    chronological listings without search capability.
+    """
     import urllib.request
+    import urllib.parse
     import json
 
     results = []
     try:
-        url = "https://api.biorxiv.org/details/biorxiv/2024-01-01/2026-12-31/0/json"
-        req = urllib.request.Request(url, headers={"User-Agent": "JournalClubPipeline/1.0"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            messages = data.get("collection", [])
-            keywords = [k.lower() for k in query.split() if len(k) > 3]
-            if not keywords:
-                keywords = [query.lower()]
+        # Build date filter
+        if time_window_months > 0:
+            cutoff = datetime.utcnow() - timedelta(days=time_window_months * 30)
+            date_filter = f' AND (FIRST_PDATE:[{cutoff.strftime("%Y-%m-%d")} TO *])'
+        else:
+            date_filter = ""
 
-            for item in messages:
-                title = item.get("title", "").lower()
-                abstract = item.get("abstract", "").lower()
-                text = f"{title} {abstract}"
-                if any(kw in text for kw in keywords):
-                    results.append({
-                        "title": item.get("title"),
-                        "abstract": item.get("abstract"),
-                        "doi": item.get("doi"),
-                        "year": item.get("date", "").split("-")[0] if item.get("date") else "2025",
-                        "publication_date": item.get("date"),
-                        "source": "biorxiv",
-                    })
-                    if len(results) >= limit:
-                        break
+        # SRC:PPR filters to preprints (bioRxiv, medRxiv, etc.)
+        search_query = f"({query}){date_filter} AND SRC:PPR"
+
+        params = urllib.parse.urlencode({
+            "query": search_query,
+            "format": "json",
+            "pageSize": str(min(limit, 100)),
+            "resultType": "core",
+            "sort": "CITED desc",
+        })
+        url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/search?{params}"
+
+        req = urllib.request.Request(url, headers={"User-Agent": "JournalClubPipeline/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+            for item in data.get("resultList", {}).get("result", []):
+                title = item.get("title", "")
+                abstract = item.get("abstractText", "")
+                doi = item.get("doi", "")
+                pub_date = item.get("firstPublicationDate", "")
+                year = pub_date.split("-")[0] if pub_date else ""
+                authors = []
+                for author in (item.get("authorList", {}) or {}).get("author", []) or []:
+                    name = author.get("fullName", "")
+                    if name:
+                        authors.append(name)
+
+                results.append({
+                    "title": title,
+                    "abstract": abstract,
+                    "doi": doi,
+                    "year": year,
+                    "publication_date": pub_date,
+                    "source": item.get("source", "europepmc"),
+                    "pmid": item.get("pmid", ""),
+                    "url": f"https://doi.org/{doi}" if doi else "",
+                    "authors": authors,
+                })
+
+                if len(results) >= limit:
+                    break
+
     except Exception as e:
-        log.debug("BioRxiv preprint fetch skipped/failed: %s", e)
+        log.warning("Europe PMC search failed for query '%s': %s", query, e)
 
     return results
 
-def ingest_into_analysis(local_memory, paperwork, key, stop_event, topic_name, time_window_months, memory):
+def ingest_into_analysis(memory, paperwork, key, stop_event, topic_name, time_window_months):
     def compute_summary_local(paperwork):
-        from core.paper_analyzer import generate_summary
+        from .paper_analyzer import generate_summary
         return generate_summary(paperwork)
 
-
-
-
-
     def compute_gaps_local(paperwork):
-        from core.paper_analyzer import analyze_gaps
+        from .paper_analyzer import analyze_gaps
         return analyze_gaps(paperwork)
 
-
-
-
-
-
-
     def compute_quality_scores(paperwork, gaps):
-        from core.paper_analyzer import score_paper_quality
+        from .paper_analyzer import score_paper_quality
         try:
             return score_paper_quality(paperwork, gaps)
-
         except Exception as e:
             log.warning(f"Error computing quality scores for {key}: {e}")
             return {}
 
-
-
-
     try:
         summary = compute_summary_local(paperwork)
-
         domain = paperwork.get("domain", "general")
         gaps = compute_gaps_local(paperwork)
         quality_scores = compute_quality_scores(paperwork, gaps)
-
-        # Add analysis results to the record
-
-
-
-
-
 
         record = {
             "summary": summary,
@@ -458,26 +520,6 @@ def ingest_into_analysis(local_memory, paperwork, key, stop_event, topic_name, t
             "gap_analysis": gaps,
             "quality_scores": quality_scores
         }
-
-
-
-
-
-
-        # Quick update to the literature memory
-        local_memory.memory["updated_cache"].setdefault(topic_name, []).append({
-            "key": key,
-            "updates": record
-        })
-
-
-
-
-
-
-
-
-
 
         # Update orig memory instance
         memory.update_paper_analysis(
@@ -487,14 +529,8 @@ def ingest_into_analysis(local_memory, paperwork, key, stop_event, topic_name, t
             quality_scores=quality_scores
         )
 
-
-
-
-
         # Force non-blocking checkpoint during analytical pipeline
-        local_memory.save()
-
-
+        memory.save()
 
     except Exception as e:
         log.warning("Analysis error for paper '%s': %s", paperwork.get("title", "Unknown"), e)
@@ -526,17 +562,12 @@ def stream_papers(
     total_cycles = 0
 
     try:
-
-
-        # Use a local memory object and periodically refresh it from the file
-        # to ensure consistency even across different thread executions.
-        local_memory = JournalClubMemory()
-
         while not stop_event.is_set():  # Add accuracy-first salvaging regardless of stop signals
             total_cycles += 1
 
             try:
                 all_new_papers = []
+                total_candidates = 0
 
                 for query in queries:
                     papers = []
@@ -545,10 +576,13 @@ def stream_papers(
                             papers = cached_semantic_search(query, limit=batch_size)
                         except TypeError:
                             papers = cached_semantic_search(query, batch_size)
+                    else:
+                        papers = []
 
-                    # BioRxiv fallback/supplement
-                    preprint_papers = fetch_biorxiv_preprints(query, limit=5)
-                    papers = (papers or []) + preprint_papers
+                    # Europe PMC search (proper full-text search of preprints)
+                    epmc_papers = fetch_europepmc_papers(query, limit=batch_size, time_window_months=time_window_months)
+                    papers = (papers or []) + epmc_papers
+                    total_candidates += len(papers)
 
                     for p in papers:
                         if not isinstance(p, dict):
@@ -577,16 +611,14 @@ def stream_papers(
                             time_window_months=time_window_months,
                         )
 
-                        # Asynchronously in queue
+                        # Analyze paper inline (blocking call)
                         ingest_into_analysis(
-                            local_memory,
+                            memory,
                             p,
                             pkey,
                             stop_event,
                             topic_name,
-
-                            time_window_months,
-                            memory  # Pass memory reference explicitly
+                            time_window_months
                         )
 
                         if record:
@@ -595,8 +627,7 @@ def stream_papers(
 
                 if all_new_papers:
                     # Also append to FAISS if available
-
-                    if Document is not None or hasattr(Document, '__class__'):
+                    if Document is not None:
                         docs = [
                             Document(
                                 page_content=f"{p.get('title', '')}\n\n{p.get('abstract', '')}",
@@ -613,17 +644,21 @@ def stream_papers(
                         if added > 0:
                             log.debug("Added %d records to FAISS index", added)
 
-                    local_memory.save()
+                    memory.save()
                     idle_cycles = 0
                     log.info(
-                        "Streaming: added %d new papers for topic: %s",
+                        "Streaming cycle %d: fetched %d candidates, added %d new papers for topic: %s",
+                        total_cycles,
+                        total_candidates,
                         len(all_new_papers),
                         topic_name,
                     )
                 else:
                     idle_cycles += 1
-                    log.debug(
-                        "Streaming: no new papers for topic: %s (idle cycle %d)",
+                    log.info(
+                        "Streaming cycle %d: fetched %d candidates, no new papers for topic: %s (idle cycle %d)",
+                        total_cycles,
+                        total_candidates,
                         topic_name,
                         idle_cycles,
                     )
@@ -647,14 +682,14 @@ def stream_papers(
             except Exception as e:
                 log.warning("Streaming ingestion error for topic '%s': %s", topic_name, e)
                 # Ensure we save any progress made even if an error occurs
-                local_memory.save()
+                memory.save()
 
 
             stop_event.wait(interval)
 
     except KeyboardInterrupt:
-        log.info(f"KeyboardInterrupt caught; ensuring memory saved before stopping stream. Current record: {len(local_memory.get_statistics().get('papers', []))}")
-        local_memory.save()
+        log.info(f"KeyboardInterrupt caught; ensuring memory saved before stopping stream. Current record: {len(memory.get_statistics().get('papers', []))}")
+        memory.save()
 
 
 
@@ -744,7 +779,13 @@ def stop_all_streaming() -> int:
         for ev in events:
             ev.set()
 
-        return len(events)
+    # Clean up LLM clients to prevent segfaults
+    try:
+        cleanup_llm_clients()
+    except Exception as e:
+        log.warning(f"Error during LLM cleanup: {e}")
+
+    return len(events)
 
 
 def active_streams() -> list[str]:

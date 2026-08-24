@@ -32,7 +32,7 @@ training:
   min_papers_threshold: 200
   auto_trigger: true
   min_quality_score: 0.5
-  model_path: /scratch/fbsnpat/bot/VLAB2/hf_cache/hub/models--Qwen--Qwen2.5-32B-Instruct/snapshots/5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd
+  model_path: /home/nike/models/qwen3.6-35b-a3b/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf
   output_dir: training/journal_club_output
 
 # Fine-tuned model usage

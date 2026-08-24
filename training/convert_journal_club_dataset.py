@@ -16,8 +16,6 @@ import json
 import logging
 from pathlib import Path
 
-from datasets import Dataset
-
 log = logging.getLogger("journal_club.training")
 
 
@@ -103,24 +101,54 @@ def load_jsonl_files(input_dir: Path) -> list:
 
 
 def main() -> None:
-    """Convert journal club JSONL data to HuggingFace dataset."""
+    """Convert journal club JSONL data to HuggingFace dataset and split JSONL files."""
+    import random
+
     rows = load_jsonl_files(INPUT_DIR)
     
     if not rows:
         log.error("No training examples found. Aborting.")
         return
     
-    # Create dataset with train/test split (90/10)
-    dataset = Dataset.from_list(rows)
-    split_dataset = dataset.train_test_split(test_size=0.1, seed=42)
-    
-    SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    split_dataset.save_to_disk(str(SAVE_PATH))
-    
-    log.info("Saved HF dataset to %s", SAVE_PATH)
-    log.info("Train examples: %d", len(split_dataset["train"]))
-    log.info("Test examples: %d", len(split_dataset["test"]))
-    log.info("Total examples: %d", len(dataset))
+    # Shuffle with fixed seed for reproducibility
+    random.seed(42)
+    random.shuffle(rows)
+
+    split_idx = max(1, int(len(rows) * 0.9))
+    train_rows = rows[:split_idx]
+    test_rows = rows[split_idx:] if len(rows) > 1 else rows[:1]
+
+    SAVE_PATH.mkdir(parents=True, exist_ok=True)
+
+    # Save formatted JSONL splits
+    train_jsonl = SAVE_PATH / "train.jsonl"
+    test_jsonl = SAVE_PATH / "test.jsonl"
+
+    with open(train_jsonl, "w", encoding="utf-8") as f:
+        for r in train_rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    with open(test_jsonl, "w", encoding="utf-8") as f:
+        for r in test_rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    log.info("Saved formatted JSONL splits to %s and %s", train_jsonl, test_jsonl)
+
+    # Try saving as HuggingFace Dataset if datasets library is installed
+    try:
+        from datasets import Dataset, DatasetDict
+        dataset = DatasetDict({
+            "train": Dataset.from_list(train_rows),
+            "test": Dataset.from_list(test_rows)
+        })
+        dataset.save_to_disk(str(SAVE_PATH / "hf_disk"))
+        log.info("Saved HF Dataset to %s", SAVE_PATH / "hf_disk")
+    except ImportError:
+        log.info("HuggingFace `datasets` library not installed; JSONL format exported successfully.")
+
+    log.info("Train examples: %d", len(train_rows))
+    log.info("Test examples: %d", len(test_rows))
+    log.info("Total examples: %d", len(rows))
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ for topic in stats['by_topic'].keys():
     unanalyzed = [p for p in papers if not p.get('summary')]
     if unanalyzed:
         print(f'Analyzing {len(unanalyzed)} papers for topic: {topic}')
-        results = analyze_batch(unanalyzed, domain='general')
+        results = analyze_batch(unanalyzed, domain='general', memory=memory)
         for i, result in enumerate(results):
             if i < len(unanalyzed):
                 paper = unanalyzed[i]

@@ -1,0 +1,407 @@
+Activating conda environment: journal_club
+=== Journal Club Test Run ===
+Starting at: Fri 21 Aug 11:54:38 BST 2026
+
+Step 1: Cleaning up duplicates...
+Before cleanup: 5 papers
+Unique DOIs: 3
+Stats: {'total_papers': 5, 'analyzed_papers': 0, 'by_topic': {'Viral Capsid Assembly': 2, 'RNA-Protein Interactions': 3}, 'by_domain': {'virology': 2, 'biophysics': 3}, 'ids_counter': 0}
+After cleanup: 3 papers
+Cleanup complete!
+
+Step 2: Running streaming (5 cycles for more papers)...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Checking dependencies...
+Installing dependencies...
+Requirement already satisfied: langchain-community>=0.0.10 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 1)) (0.4.2)
+Requirement already satisfied: langchain-core>=0.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 2)) (1.6.0)
+Requirement already satisfied: langchain-huggingface>=0.0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 3)) (1.2.2)
+Requirement already satisfied: sentence-transformers>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 4)) (6.0.0)
+Requirement already satisfied: requests>=2.31.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 5)) (2.34.2)
+Requirement already satisfied: pyyaml>=6.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 6)) (6.0.3)
+Requirement already satisfied: flask>=3.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 7)) (3.1.3)
+Requirement already satisfied: jinja2>=3.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 8)) (3.1.6)
+Requirement already satisfied: python-dotenv>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 9)) (1.2.3)
+Requirement already satisfied: biopython>=1.81 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 10)) (1.88)
+Requirement already satisfied: pydantic>=2.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 11)) (2.13.4)
+Requirement already satisfied: psutil>=5.9.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 12)) (7.2.2)
+Requirement already satisfied: aiohttp<4.0.0,>=3.8.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.14.3)
+Requirement already satisfied: httpx-sse<1.0.0,>=0.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.4.3)
+Requirement already satisfied: langchain-classic<2.0.0,>=1.0.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.0.8)
+Requirement already satisfied: langsmith<1.0.0,>=0.1.125 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.11.1)
+Requirement already satisfied: numpy>=1.26.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.4.6)
+Requirement already satisfied: pydantic-settings<3.0.0,>=2.10.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.15.0)
+Requirement already satisfied: sqlalchemy<3.0.0,>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.0.52)
+Requirement already satisfied: tenacity!=8.4.0,<10.0.0,>=8.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (9.1.4)
+Requirement already satisfied: httpx<1.0.0,>=0.23.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.28.1)
+Requirement already satisfied: jsonpatch<2.0.0,>=1.33.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (1.33)
+Requirement already satisfied: langchain-protocol>=0.0.17 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.0.18)
+Requirement already satisfied: packaging>=23.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (25.0)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.7.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (4.16.0)
+Requirement already satisfied: uuid-utils<1.0,>=0.12.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.17.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (3.5.1)
+Requirement already satisfied: idna<4,>=2.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (3.19)
+Requirement already satisfied: urllib3<3,>=1.26 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (2.7.0)
+Requirement already satisfied: certifi>=2023.5.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (2026.7.22)
+Requirement already satisfied: annotated-types>=0.6.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (0.8.0)
+Requirement already satisfied: pydantic-core==2.46.4 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (0.4.4)
+Requirement already satisfied: aiohappyeyeballs>=2.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.7.1)
+Requirement already satisfied: aiosignal>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.4.0)
+Requirement already satisfied: attrs>=17.3.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (26.1.0)
+Requirement already satisfied: frozenlist>=1.1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.8.0)
+Requirement already satisfied: multidict<7.0,>=4.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (6.7.1)
+Requirement already satisfied: propcache>=0.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.5.2)
+Requirement already satisfied: yarl<2.0,>=1.17.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.24.5)
+Requirement already satisfied: anyio in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (4.14.2)
+Requirement already satisfied: httpcore==1.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (1.0.9)
+Requirement already satisfied: h11>=0.16 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpcore==1.*->httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.16.0)
+Requirement already satisfied: jsonpointer>=1.9 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from jsonpatch<2.0.0,>=1.33.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (3.1.1)
+Requirement already satisfied: langchain-text-splitters<2.0.0,>=1.1.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-classic<2.0.0,>=1.0.7->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.1.2)
+Requirement already satisfied: distro>=1.7.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.9.0)
+Requirement already satisfied: orjson>=3.9.14 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.12.0)
+Requirement already satisfied: requests-toolbelt>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.0.0)
+Requirement already satisfied: sniffio>=1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.3.1)
+Requirement already satisfied: websockets>=15.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (17.0.1)
+Requirement already satisfied: xxhash>=3.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (4.0.1)
+Requirement already satisfied: zstandard>=0.23.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.25.0)
+Requirement already satisfied: greenlet>=1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sqlalchemy<3.0.0,>=1.4.0->langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.5.5)
+Requirement already satisfied: huggingface-hub<2.0.0,>=0.33.4 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (1.28.0)
+Requirement already satisfied: tokenizers<1.0.0,>=0.19.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (0.22.2)
+Requirement already satisfied: click<9.0.0,>=8.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (8.4.2)
+Requirement already satisfied: filelock>=3.10.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (3.32.3)
+Requirement already satisfied: fsspec>=2023.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (2026.7.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.5.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (1.6.0)
+Requirement already satisfied: tqdm>=4.42.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (4.70.0)
+Requirement already satisfied: transformers<6.0.0,>=5.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (5.15.1)
+Requirement already satisfied: torch>=2.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.13.0)
+Requirement already satisfied: scikit-learn>=1.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.9.0)
+Requirement already satisfied: scipy>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.17.1)
+Requirement already satisfied: regex>=2025.10.22 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2026.7.19)
+Requirement already satisfied: typer in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.27.1)
+Requirement already satisfied: safetensors>=0.8.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.8.0)
+Requirement already satisfied: blinker>=1.9.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (1.9.0)
+Requirement already satisfied: itsdangerous>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (2.2.0)
+Requirement already satisfied: markupsafe>=2.1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (3.0.3)
+Requirement already satisfied: werkzeug>=3.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (3.1.8)
+Requirement already satisfied: joblib>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.5.3)
+Requirement already satisfied: narwhals>=2.0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.24.0)
+Requirement already satisfied: threadpoolctl>=3.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.6.0)
+Requirement already satisfied: setuptools>=77.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (80.10.2)
+Requirement already satisfied: sympy>=1.13.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.6.1)
+Requirement already satisfied: cuda-toolkit==13.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.3.0)
+Requirement already satisfied: cuda-bindings<14,>=13.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.3.1)
+Requirement already satisfied: nvidia-cudnn-cu13==9.20.0.48 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (9.20.0.48)
+Requirement already satisfied: nvidia-cusparselt-cu13==0.8.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.8.1)
+Requirement already satisfied: nvidia-nccl-cu13==2.29.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.29.7)
+Requirement already satisfied: nvidia-nvshmem-cu13==3.4.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.4.5)
+Requirement already satisfied: triton==3.7.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.7.1)
+Requirement already satisfied: nvidia-cublas==13.1.1.3.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.1.1.3)
+Requirement already satisfied: nvidia-cuda-nvrtc==13.0.88.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.88)
+Requirement already satisfied: nvidia-cuda-runtime==13.0.96.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.96)
+Requirement already satisfied: nvidia-cufft==12.0.0.61.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.0.0.61)
+Requirement already satisfied: nvidia-nvjitlink<14,>=13.0.88 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.3.33)
+Requirement already satisfied: nvidia-cufile==1.15.1.6.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.15.1.6)
+Requirement already satisfied: nvidia-cuda-cupti==13.0.85.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.85)
+Requirement already satisfied: nvidia-curand==10.4.0.35.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (10.4.0.35)
+Requirement already satisfied: nvidia-cusolver==12.0.4.66.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.0.4.66)
+Requirement already satisfied: nvidia-cusparse==12.6.3.3.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.6.3.3)
+Requirement already satisfied: nvidia-nvtx==13.0.85.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.85)
+Requirement already satisfied: cuda-pathfinder>=1.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-bindings<14,>=13.0.3->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.6.1)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sympy>=1.13.3->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.3.0)
+Requirement already satisfied: shellingham>=1.3.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.5.4)
+Requirement already satisfied: rich>=13.8.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (15.0.0)
+Requirement already satisfied: annotated-doc>=0.0.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.0.5)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (4.2.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.21.0)
+Requirement already satisfied: mdurl~=0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.1.2)
+Starting literature streaming (cycles=3, interval=30s)...
+2026-08-21 11:54:39,296 [journal_club.streaming] INFO: Streaming worker active for topic: RNA-Protein Interactions (domain: biophysics)
+2026-08-21 11:54:39,296 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: RNA-Protein Interactions
+2026-08-21 11:54:39,296 [journal_club.streaming] INFO: Streaming worker active for topic: Viral Capsid Assembly (domain: virology)
+2026-08-21 11:54:39,297 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: Viral Capsid Assembly
+2026-08-21 11:54:39,297 [journal_club.streaming] INFO: Started streaming for 2 topics
+2026-08-21 11:59:39,299 [journal_club.analyzer] INFO: LLM clients cleaned up successfully (0 removed, 0 preserved)
+Started 2 topic streams
+  Stream cycle 1/5 — active streams: 2
+  Stream cycle 2/5 — active streams: 2
+  Stream cycle 3/5 — active streams: 2
+  Stream cycle 4/5 — active streams: 2
+  Stream cycle 5/5 — active streams: 2
+Stopping all streams...
+Streaming complete.
+
+Step 2.5: Running post-streaming deduplication...
+Removed 0 duplicate papers after streaming
+
+Step 3: Running analysis...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Checking dependencies...
+Installing dependencies...
+Requirement already satisfied: langchain-community>=0.0.10 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 1)) (0.4.2)
+Requirement already satisfied: langchain-core>=0.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 2)) (1.6.0)
+Requirement already satisfied: langchain-huggingface>=0.0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 3)) (1.2.2)
+Requirement already satisfied: sentence-transformers>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 4)) (6.0.0)
+Requirement already satisfied: requests>=2.31.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 5)) (2.34.2)
+Requirement already satisfied: pyyaml>=6.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 6)) (6.0.3)
+Requirement already satisfied: flask>=3.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 7)) (3.1.3)
+Requirement already satisfied: jinja2>=3.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 8)) (3.1.6)
+Requirement already satisfied: python-dotenv>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 9)) (1.2.3)
+Requirement already satisfied: biopython>=1.81 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 10)) (1.88)
+Requirement already satisfied: pydantic>=2.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 11)) (2.13.4)
+Requirement already satisfied: psutil>=5.9.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 12)) (7.2.2)
+Requirement already satisfied: aiohttp<4.0.0,>=3.8.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.14.3)
+Requirement already satisfied: httpx-sse<1.0.0,>=0.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.4.3)
+Requirement already satisfied: langchain-classic<2.0.0,>=1.0.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.0.8)
+Requirement already satisfied: langsmith<1.0.0,>=0.1.125 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.11.1)
+Requirement already satisfied: numpy>=1.26.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.4.6)
+Requirement already satisfied: pydantic-settings<3.0.0,>=2.10.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.15.0)
+Requirement already satisfied: sqlalchemy<3.0.0,>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.0.52)
+Requirement already satisfied: tenacity!=8.4.0,<10.0.0,>=8.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (9.1.4)
+Requirement already satisfied: httpx<1.0.0,>=0.23.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.28.1)
+Requirement already satisfied: jsonpatch<2.0.0,>=1.33.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (1.33)
+Requirement already satisfied: langchain-protocol>=0.0.17 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.0.18)
+Requirement already satisfied: packaging>=23.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (25.0)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.7.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (4.16.0)
+Requirement already satisfied: uuid-utils<1.0,>=0.12.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.17.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (3.5.1)
+Requirement already satisfied: idna<4,>=2.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (3.19)
+Requirement already satisfied: urllib3<3,>=1.26 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (2.7.0)
+Requirement already satisfied: certifi>=2023.5.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (2026.7.22)
+Requirement already satisfied: annotated-types>=0.6.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (0.8.0)
+Requirement already satisfied: pydantic-core==2.46.4 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (0.4.4)
+Requirement already satisfied: aiohappyeyeballs>=2.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.7.1)
+Requirement already satisfied: aiosignal>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.4.0)
+Requirement already satisfied: attrs>=17.3.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (26.1.0)
+Requirement already satisfied: frozenlist>=1.1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.8.0)
+Requirement already satisfied: multidict<7.0,>=4.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (6.7.1)
+Requirement already satisfied: propcache>=0.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.5.2)
+Requirement already satisfied: yarl<2.0,>=1.17.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.24.5)
+Requirement already satisfied: anyio in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (4.14.2)
+Requirement already satisfied: httpcore==1.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (1.0.9)
+Requirement already satisfied: h11>=0.16 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpcore==1.*->httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.16.0)
+Requirement already satisfied: jsonpointer>=1.9 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from jsonpatch<2.0.0,>=1.33.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (3.1.1)
+Requirement already satisfied: langchain-text-splitters<2.0.0,>=1.1.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-classic<2.0.0,>=1.0.7->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.1.2)
+Requirement already satisfied: distro>=1.7.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.9.0)
+Requirement already satisfied: orjson>=3.9.14 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.12.0)
+Requirement already satisfied: requests-toolbelt>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.0.0)
+Requirement already satisfied: sniffio>=1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.3.1)
+Requirement already satisfied: websockets>=15.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (17.0.1)
+Requirement already satisfied: xxhash>=3.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (4.0.1)
+Requirement already satisfied: zstandard>=0.23.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.25.0)
+Requirement already satisfied: greenlet>=1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sqlalchemy<3.0.0,>=1.4.0->langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.5.5)
+Requirement already satisfied: huggingface-hub<2.0.0,>=0.33.4 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (1.28.0)
+Requirement already satisfied: tokenizers<1.0.0,>=0.19.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (0.22.2)
+Requirement already satisfied: click<9.0.0,>=8.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (8.4.2)
+Requirement already satisfied: filelock>=3.10.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (3.32.3)
+Requirement already satisfied: fsspec>=2023.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (2026.7.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.5.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (1.6.0)
+Requirement already satisfied: tqdm>=4.42.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (4.70.0)
+Requirement already satisfied: transformers<6.0.0,>=5.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (5.15.1)
+Requirement already satisfied: torch>=2.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.13.0)
+Requirement already satisfied: scikit-learn>=1.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.9.0)
+Requirement already satisfied: scipy>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.17.1)
+Requirement already satisfied: regex>=2025.10.22 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2026.7.19)
+Requirement already satisfied: typer in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.27.1)
+Requirement already satisfied: safetensors>=0.8.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.8.0)
+Requirement already satisfied: blinker>=1.9.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (1.9.0)
+Requirement already satisfied: itsdangerous>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (2.2.0)
+Requirement already satisfied: markupsafe>=2.1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (3.0.3)
+Requirement already satisfied: werkzeug>=3.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (3.1.8)
+Requirement already satisfied: joblib>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.5.3)
+Requirement already satisfied: narwhals>=2.0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.24.0)
+Requirement already satisfied: threadpoolctl>=3.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.6.0)
+Requirement already satisfied: setuptools>=77.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (80.10.2)
+Requirement already satisfied: sympy>=1.13.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.6.1)
+Requirement already satisfied: cuda-toolkit==13.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.3.0)
+Requirement already satisfied: cuda-bindings<14,>=13.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.3.1)
+Requirement already satisfied: nvidia-cudnn-cu13==9.20.0.48 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (9.20.0.48)
+Requirement already satisfied: nvidia-cusparselt-cu13==0.8.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.8.1)
+Requirement already satisfied: nvidia-nccl-cu13==2.29.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.29.7)
+Requirement already satisfied: nvidia-nvshmem-cu13==3.4.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.4.5)
+Requirement already satisfied: triton==3.7.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.7.1)
+Requirement already satisfied: nvidia-cublas==13.1.1.3.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.1.1.3)
+Requirement already satisfied: nvidia-cuda-nvrtc==13.0.88.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.88)
+Requirement already satisfied: nvidia-cuda-runtime==13.0.96.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.96)
+Requirement already satisfied: nvidia-cufft==12.0.0.61.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.0.0.61)
+Requirement already satisfied: nvidia-nvjitlink<14,>=13.0.88 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.3.33)
+Requirement already satisfied: nvidia-cufile==1.15.1.6.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.15.1.6)
+Requirement already satisfied: nvidia-cuda-cupti==13.0.85.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.85)
+Requirement already satisfied: nvidia-curand==10.4.0.35.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (10.4.0.35)
+Requirement already satisfied: nvidia-cusolver==12.0.4.66.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.0.4.66)
+Requirement already satisfied: nvidia-cusparse==12.6.3.3.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.6.3.3)
+Requirement already satisfied: nvidia-nvtx==13.0.85.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.85)
+Requirement already satisfied: cuda-pathfinder>=1.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-bindings<14,>=13.0.3->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.6.1)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sympy>=1.13.3->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.3.0)
+Requirement already satisfied: shellingham>=1.3.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.5.4)
+Requirement already satisfied: rich>=13.8.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (15.0.0)
+Requirement already satisfied: annotated-doc>=0.0.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.0.5)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (4.2.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.21.0)
+Requirement already satisfied: mdurl~=0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.1.2)
+Running paper analysis...
+2026-08-21 11:59:39,913 [journal_club.analyzer] INFO: Analyzing batch of 1 papers (sequential)
+2026-08-21 11:59:39,913 [journal_club.analyzer] INFO: Processing paper 1/1: Genomic Transfer via Membrane Vesicle: A Strategy of Giant Phage phiKZ for Early Infection
+2026-08-21 11:59:39,913 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-20T00:00:00', 'title': 'Genomic Transfer via Membrane Vesicle: A Strategy of Giant Phage phiKZ for Early Infection', 'abstract': 'During infection, the giant phiKZ phage forms a specialized structure at the center of the host cell called the phage nucleus. This structure is crucial for safeguarding viral DNA against bacterial nucleases and for segregating the transcriptional activities of late genes. Here, we describe a morphological entity, the early phage infection vesicle (EPI vesicle), which appears to be responsible for earlier gene segregation at the beginning of the infection process. Using cryo-electron microscopy, electron tomography, and fluorescence microscopy with membrane-specific dyes, we found that the EPI vesicle is enclosed in a lipid bilayer originating, apparently, from the inner membrane of the bacterial cell. Our investigations further disclose that the phiKZ EPI vesicle contains both viral DNA and viral RNA polymerase (vRNAP). We have observed that the EPI vesicle migrates from the cell pole to the center, displaying co-localization with ChmA, the primary protein of the phage nucleus. While phage DNA is transported into the phage nucleus after phage maturation, the EPI vesicle remains outside. We hypothesized that the EPI vesicle acts as a membrane transport agent, efficiently delivering phage DNA to the phage nucleus while protecting it from the nucleases of the bacterium.', 'year': '2024', 'publication_date': '2024-01-01', 'doi': '10.1101/2023.12.31.573766', 'pmid': '', 'url': '', 'source': 'biorxiv', 'authors': [], 'topic_name': 'Viral Capsid Assembly', 'domain': 'virology'}
+2026-08-21 11:59:39,913 [journal_club.analyzer] INFO: Using cached analysis for: Genomic Transfer via Membrane Vesicle: A Strategy of Giant Phage phiKZ for Early Infection
+2026-08-21 11:59:39,914 [journal_club.analyzer] INFO: Batch analysis complete: 1/1 papers processed
+2026-08-21 11:59:39,914 [journal_club.analyzer] INFO: Analyzing batch of 2 papers (parallel, 4 workers)
+2026-08-21 11:59:39,914 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-20T00:00:00', 'title': "The brainstem's red nucleus was evolutionarily upgraded to support goal-directed action", 'abstract': 'The red nucleus is a large brainstem structure that coordinates limb movement for locomotion in quadrupedal animals (Basile et al., 2021). The humans red nucleus has a different pattern of anatomical connectivity compared to quadrupeds, suggesting a unique purpose (Hatschek, 1907). Previously the function of the human red nucleus remained unclear at least partly due to methodological limitations with brainstem functional neuroimaging (Sclocco et al., 2018). Here, we used our most advanced resting-state functional connectivity (RSFC) based precision functional mapping (PFM) in highly sampled individuals (n = 5) and large group-averaged datasets (combined N [~] 45,000), to precisely examine red nucleus functional connectivity.\n\nNotably, red nucleus functional connectivity to motor-effector networks (somatomotor hand, foot, and mouth) was minimal. Instead, red nucleus functional connectivity along the central sulcus was specific to regions of the recently discovered somato-cognitive action network (SCAN; (Gordon et al., 2023)). Outside of primary motor cortex, red nucleus connectivity was strongest to the cingulo-opercular (CON) and salience networks, involved in action/cognitive control (Dosenbach et al., 2007; Newbold et al., 2021) and reward/motivated behavior (Seeley, 2019), respectively. Functional connectivity to these two networks was organized into discrete dorsal-medial and ventral-lateral zones. Red nucleus functional connectivity to the thalamus recapitulated known structural connectivity of the dento-rubral thalamic tract (DRTT) and could prove clinically useful in functionally targeting the ventral intermediate (VIM) nucleus. In total, our results indicate that far from being a  motor structure, the red nucleus is better understood as a brainstem nucleus for implementing goal-directed behavior, integrating behavioral valence and action plans.', 'year': '2024', 'publication_date': '2024-01-01', 'doi': '10.1101/2023.12.30.573730', 'pmid': '', 'url': '', 'source': 'biorxiv', 'authors': [], 'topic_name': 'RNA-Protein Interactions', 'domain': 'biophysics'}
+2026-08-21 11:59:39,914 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-21T00:00:00', 'title': 'Cryo-EM structure and biochemical analysis of human chemokine receptor CCR8', 'abstract': 'The C-C motif chemokine receptor 8 (CCR8) is a class A G-protein coupled receptor that has emerged as a promising therapeutic target in cancer and autoimmune diseases. Although the structures of human CCR8 in complex an antagonist antibody Fab1 and an endogenous agonist ligand CCL1 have been solved, the structure of ligand-free CCR8 remains to be determined. Here, we solved the cryo-electron microscopy (cryo-EM) structure of the human CCR8-Gi complex in the absence of a ligand. Structural analysis and comparison revealed that CCR8 in our apo structure undergoes some conformational change and is similar to that in the CCL1-CCR8 complex structure, indicating an active state. In addition, the key residues of CCR8 involved in the recognition of LMD-009, a potent nonpeptidic agonist, were investigated by mutating CCR8 and testing the calcium flux induced by LMD-009-CCR8 interaction. Two mutants of CCR8, Y1133.32A, and E2867.39A, showed a dramatically decreased ability in mediating calcium mobilization, indicating their key interaction with LMD-009. These structural and biochemical analyses provided molecular insights into the agonism and activation of CCR8 and will also facilitate CCR8-targeted therapy.', 'year': '2024', 'publication_date': '2024-01-01', 'doi': '10.1101/2023.12.30.573520', 'pmid': '', 'url': '', 'source': 'biorxiv', 'authors': [], 'topic_name': 'RNA-Protein Interactions', 'domain': 'biophysics'}
+2026-08-21 11:59:39,915 [journal_club.analyzer] INFO: Using cached analysis for: The brainstem's red nucleus was evolutionarily upgraded to support goal-directed action
+2026-08-21 11:59:39,915 [journal_club.analyzer] INFO: Using cached analysis for: Cryo-EM structure and biochemical analysis of human chemokine receptor CCR8
+2026-08-21 11:59:39,915 [journal_club.analyzer] INFO: Completed analysis for: The brainstem's red nucleus was evolutionarily upg
+2026-08-21 11:59:39,915 [journal_club.analyzer] INFO: Completed analysis for: Cryo-EM structure and biochemical analysis of huma
+2026-08-21 11:59:39,915 [journal_club.analyzer] INFO: Parallel batch analysis complete: 2/2 papers processed
+Total papers in memory: 3
+Analyzing 1 papers for topic: Viral Capsid Assembly
+Analyzing 2 papers for topic: RNA-Protein Interactions
+Analysis complete!
+
+Step 4: Generating reports...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Checking dependencies...
+Installing dependencies...
+Requirement already satisfied: langchain-community>=0.0.10 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 1)) (0.4.2)
+Requirement already satisfied: langchain-core>=0.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 2)) (1.6.0)
+Requirement already satisfied: langchain-huggingface>=0.0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 3)) (1.2.2)
+Requirement already satisfied: sentence-transformers>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 4)) (6.0.0)
+Requirement already satisfied: requests>=2.31.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 5)) (2.34.2)
+Requirement already satisfied: pyyaml>=6.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 6)) (6.0.3)
+Requirement already satisfied: flask>=3.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 7)) (3.1.3)
+Requirement already satisfied: jinja2>=3.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 8)) (3.1.6)
+Requirement already satisfied: python-dotenv>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 9)) (1.2.3)
+Requirement already satisfied: biopython>=1.81 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 10)) (1.88)
+Requirement already satisfied: pydantic>=2.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 11)) (2.13.4)
+Requirement already satisfied: psutil>=5.9.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from -r requirements.txt (line 12)) (7.2.2)
+Requirement already satisfied: aiohttp<4.0.0,>=3.8.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.14.3)
+Requirement already satisfied: httpx-sse<1.0.0,>=0.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.4.3)
+Requirement already satisfied: langchain-classic<2.0.0,>=1.0.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.0.8)
+Requirement already satisfied: langsmith<1.0.0,>=0.1.125 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.11.1)
+Requirement already satisfied: numpy>=1.26.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.4.6)
+Requirement already satisfied: pydantic-settings<3.0.0,>=2.10.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.15.0)
+Requirement already satisfied: sqlalchemy<3.0.0,>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.0.52)
+Requirement already satisfied: tenacity!=8.4.0,<10.0.0,>=8.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-community>=0.0.10->-r requirements.txt (line 1)) (9.1.4)
+Requirement already satisfied: httpx<1.0.0,>=0.23.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.28.1)
+Requirement already satisfied: jsonpatch<2.0.0,>=1.33.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (1.33)
+Requirement already satisfied: langchain-protocol>=0.0.17 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.0.18)
+Requirement already satisfied: packaging>=23.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (25.0)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.7.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (4.16.0)
+Requirement already satisfied: uuid-utils<1.0,>=0.12.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.17.0)
+Requirement already satisfied: charset_normalizer<4,>=2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (3.5.1)
+Requirement already satisfied: idna<4,>=2.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (3.19)
+Requirement already satisfied: urllib3<3,>=1.26 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (2.7.0)
+Requirement already satisfied: certifi>=2023.5.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from requests>=2.31.0->-r requirements.txt (line 5)) (2026.7.22)
+Requirement already satisfied: annotated-types>=0.6.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (0.8.0)
+Requirement already satisfied: pydantic-core==2.46.4 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from pydantic>=2.0.0->-r requirements.txt (line 11)) (0.4.4)
+Requirement already satisfied: aiohappyeyeballs>=2.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (2.7.1)
+Requirement already satisfied: aiosignal>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.4.0)
+Requirement already satisfied: attrs>=17.3.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (26.1.0)
+Requirement already satisfied: frozenlist>=1.1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.8.0)
+Requirement already satisfied: multidict<7.0,>=4.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (6.7.1)
+Requirement already satisfied: propcache>=0.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.5.2)
+Requirement already satisfied: yarl<2.0,>=1.17.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from aiohttp<4.0.0,>=3.8.3->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.24.5)
+Requirement already satisfied: anyio in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (4.14.2)
+Requirement already satisfied: httpcore==1.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (1.0.9)
+Requirement already satisfied: h11>=0.16 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from httpcore==1.*->httpx<1.0.0,>=0.23.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (0.16.0)
+Requirement already satisfied: jsonpointer>=1.9 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from jsonpatch<2.0.0,>=1.33.0->langchain-core>=0.1.0->-r requirements.txt (line 2)) (3.1.1)
+Requirement already satisfied: langchain-text-splitters<2.0.0,>=1.1.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-classic<2.0.0,>=1.0.7->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.1.2)
+Requirement already satisfied: distro>=1.7.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.9.0)
+Requirement already satisfied: orjson>=3.9.14 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.12.0)
+Requirement already satisfied: requests-toolbelt>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.0.0)
+Requirement already satisfied: sniffio>=1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (1.3.1)
+Requirement already satisfied: websockets>=15.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (17.0.1)
+Requirement already satisfied: xxhash>=3.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (4.0.1)
+Requirement already satisfied: zstandard>=0.23.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langsmith<1.0.0,>=0.1.125->langchain-community>=0.0.10->-r requirements.txt (line 1)) (0.25.0)
+Requirement already satisfied: greenlet>=1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sqlalchemy<3.0.0,>=1.4.0->langchain-community>=0.0.10->-r requirements.txt (line 1)) (3.5.5)
+Requirement already satisfied: huggingface-hub<2.0.0,>=0.33.4 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (1.28.0)
+Requirement already satisfied: tokenizers<1.0.0,>=0.19.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (0.22.2)
+Requirement already satisfied: click<9.0.0,>=8.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (8.4.2)
+Requirement already satisfied: filelock>=3.10.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (3.32.3)
+Requirement already satisfied: fsspec>=2023.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (2026.7.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.5.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (1.6.0)
+Requirement already satisfied: tqdm>=4.42.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from huggingface-hub<2.0.0,>=0.33.4->langchain-huggingface>=0.0.1->-r requirements.txt (line 3)) (4.70.0)
+Requirement already satisfied: transformers<6.0.0,>=5.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (5.15.1)
+Requirement already satisfied: torch>=2.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.13.0)
+Requirement already satisfied: scikit-learn>=1.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.9.0)
+Requirement already satisfied: scipy>=1.0.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.17.1)
+Requirement already satisfied: regex>=2025.10.22 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2026.7.19)
+Requirement already satisfied: typer in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.27.1)
+Requirement already satisfied: safetensors>=0.8.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.8.0)
+Requirement already satisfied: blinker>=1.9.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (1.9.0)
+Requirement already satisfied: itsdangerous>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (2.2.0)
+Requirement already satisfied: markupsafe>=2.1.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (3.0.3)
+Requirement already satisfied: werkzeug>=3.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from flask>=3.0.0->-r requirements.txt (line 7)) (3.1.8)
+Requirement already satisfied: joblib>=1.4.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.5.3)
+Requirement already satisfied: narwhals>=2.0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.24.0)
+Requirement already satisfied: threadpoolctl>=3.5.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from scikit-learn>=1.1.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.6.0)
+Requirement already satisfied: setuptools>=77.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (80.10.2)
+Requirement already satisfied: sympy>=1.13.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.6.1)
+Requirement already satisfied: cuda-toolkit==13.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.3.0)
+Requirement already satisfied: cuda-bindings<14,>=13.0.3 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.3.1)
+Requirement already satisfied: nvidia-cudnn-cu13==9.20.0.48 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (9.20.0.48)
+Requirement already satisfied: nvidia-cusparselt-cu13==0.8.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.8.1)
+Requirement already satisfied: nvidia-nccl-cu13==2.29.7 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.29.7)
+Requirement already satisfied: nvidia-nvshmem-cu13==3.4.5 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.4.5)
+Requirement already satisfied: triton==3.7.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (3.7.1)
+Requirement already satisfied: nvidia-cublas==13.1.1.3.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.1.1.3)
+Requirement already satisfied: nvidia-cuda-nvrtc==13.0.88.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.88)
+Requirement already satisfied: nvidia-cuda-runtime==13.0.96.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.96)
+Requirement already satisfied: nvidia-cufft==12.0.0.61.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.0.0.61)
+Requirement already satisfied: nvidia-nvjitlink<14,>=13.0.88 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.3.33)
+Requirement already satisfied: nvidia-cufile==1.15.1.6.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.15.1.6)
+Requirement already satisfied: nvidia-cuda-cupti==13.0.85.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.85)
+Requirement already satisfied: nvidia-curand==10.4.0.35.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (10.4.0.35)
+Requirement already satisfied: nvidia-cusolver==12.0.4.66.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.0.4.66)
+Requirement already satisfied: nvidia-cusparse==12.6.3.3.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (12.6.3.3)
+Requirement already satisfied: nvidia-nvtx==13.0.85.* in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (13.0.85)
+Requirement already satisfied: cuda-pathfinder>=1.4.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from cuda-bindings<14,>=13.0.3->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.6.1)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from sympy>=1.13.3->torch>=2.2->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.3.0)
+Requirement already satisfied: shellingham>=1.3.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (1.5.4)
+Requirement already satisfied: rich>=13.8.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (15.0.0)
+Requirement already satisfied: annotated-doc>=0.0.2 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.0.5)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (4.2.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (2.21.0)
+Requirement already satisfied: mdurl~=0.1 in /home/nike/.conda/envs/journal_club/lib/python3.11/site-packages (from markdown-it-py>=2.2.0->rich>=13.8.0->typer->transformers<6.0.0,>=5.0.0->sentence-transformers>=2.2.0->-r requirements.txt (line 4)) (0.1.2)
+Generating reports...
+Generated 3 reports
+
+Step 5: Final statistics...
+Journal Club Memory Summary (3 papers)
+--------------------------------------------
+  Total papers: 3
+  Topics: 2
+  Domains: 2
+
+Topics:
+  - RNA-Protein Interactions (2 papers)
+  - Viral Capsid Assembly (1 papers)
+
+Domains:
+  - biophysics (2 papers)
+  - virology (1 papers)
+
+Analyzed papers: 0/3
+
+=== Test Run Complete ===
+Finished at: Fri 21 Aug 11:59:40 BST 2026

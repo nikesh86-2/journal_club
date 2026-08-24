@@ -1,0 +1,120 @@
+Activating conda environment: journal_club
+=== Journal Club Test Run ===
+Starting at: Fri 21 Aug 14:24:26 BST 2026
+
+Step 1: Cleaning up duplicates...
+Before cleanup: 7 papers
+Unique DOIs: 7
+Stats: {'total_papers': 7, 'analyzed_papers': 7, 'by_topic': {'RNA-Protein Interactions': 5, 'Viral Capsid Assembly': 2}, 'by_domain': {'biophysics': 5, 'virology': 2}, 'ids_counter': 0}
+After cleanup: 7 papers
+Cleanup complete!
+
+Step 2: Running streaming (5 cycles for more papers)...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Starting literature streaming (cycles=3, interval=30s)...
+2026-08-21 14:24:26,386 [journal_club.streaming] INFO: Streaming worker active for topic: RNA-Protein Interactions (domain: biophysics)
+2026-08-21 14:24:26,386 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: RNA-Protein Interactions
+2026-08-21 14:24:26,386 [journal_club.streaming] INFO: Streaming worker active for topic: Viral Capsid Assembly (domain: virology)
+2026-08-21 14:24:26,386 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: Viral Capsid Assembly
+2026-08-21 14:24:26,386 [journal_club.streaming] INFO: Started streaming for 2 topics
+2026-08-21 14:24:28,946 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 8
+2026-08-21 14:24:28,946 [journal_club.memory.save] INFO: Successfully appended paper Genome-Scale Codon Deoptimization Enables Attenuation of Rif
+2026-08-21 14:24:28,946 [journal_club.analyzer] INFO: Loading LLM client (cache miss): base_/home/nike/models/qwen3.6-35b-a3b
+2026-08-21 14:24:28,946 [journal_club.analyzer] INFO: Using external llama-server at: http://localhost:8080
+2026-08-21 14:24:30,025 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 9
+2026-08-21 14:24:30,025 [journal_club.memory.save] INFO: Successfully appended paper Post-translational modification fidelity of recombinant huma
+2026-08-21 14:25:11,183 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 9
+2026-08-21 14:25:11,184 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 10
+2026-08-21 14:25:11,184 [journal_club.memory.save] INFO: Successfully appended paper Heteromeric LGP2-MDA5 receptor complexes drive antiviral sig
+2026-08-21 14:25:37,078 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 10
+2026-08-21 14:25:37,081 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 11
+2026-08-21 14:25:37,081 [journal_club.memory.save] INFO: Successfully appended paper New Approaches to Fast Plate Composition, with a Software Im
+2026-08-21 14:26:18,548 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 11
+2026-08-21 14:26:24,376 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 11
+2026-08-21 14:26:24,376 [journal_club.streaming] INFO: Streaming cycle 1: fetched 7 candidates, added 2 new papers for topic: Viral Capsid Assembly
+2026-08-21 14:26:45,436 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 11
+2026-08-21 14:26:45,441 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 12
+2026-08-21 14:26:45,441 [journal_club.memory.save] INFO: Successfully appended paper Automating Biomedical Knowledge Graph Construction For Conte
+2026-08-21 14:27:07,829 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 13
+2026-08-21 14:27:07,830 [journal_club.memory.save] INFO: Successfully appended paper Defining a leptomeningeal blood cerebrospinal fluid barrier 
+2026-08-21 14:27:16,581 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 13
+2026-08-21 14:27:16,582 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-21 14:27:16,582 [journal_club.memory.save] INFO: Successfully appended paper Clathrin differentially adapts its trimerisation domain duri
+2026-08-21 14:27:53,369 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-21 14:27:53,370 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-21 14:27:53,370 [journal_club.streaming] INFO: Streaming cycle 2: fetched 5 candidates, added 1 new papers for topic: Viral Capsid Assembly
+2026-08-21 14:28:28,198 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-21 14:28:29,913 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-21 14:28:29,913 [journal_club.streaming] INFO: Streaming cycle 1: fetched 5 candidates, added 4 new papers for topic: RNA-Protein Interactions
+2026-08-21 14:28:32,974 [journal_club.streaming] INFO: Streaming cycle 3: fetched 7 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 1)
+2026-08-21 14:29:07,751 [journal_club.streaming] INFO: Streaming cycle 2: fetched 8 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 1)
+2026-08-21 14:29:10,689 [journal_club.streaming] INFO: Streaming cycle 4: fetched 4 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 2)
+2026-08-21 14:29:26,387 [journal_club.streaming] WARNING: Error during LLM cleanup: name '_llm_cleanup_lock' is not defined
+Started 2 topic streams
+  Waiting for streaming... (1/5 intervals elapsed, 2 active)
+  Waiting for streaming... (2/5 intervals elapsed, 2 active)
+  Waiting for streaming... (3/5 intervals elapsed, 2 active)
+  Waiting for streaming... (4/5 intervals elapsed, 2 active)
+  Waiting for streaming... (5/5 intervals elapsed, 2 active)
+Stopping all streams...
+Streaming complete.
+
+Step 2.5: Running post-streaming deduplication...
+Removed 6 duplicate papers after streaming
+Removed 0 misclassified papers from wrong topics
+
+Step 3: Running analysis...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Running paper analysis...
+2026-08-21 14:29:26,589 [journal_club.analyzer] INFO: Analyzing batch of 1 papers (sequential)
+2026-08-21 14:29:26,589 [journal_club.analyzer] INFO: Processing paper 1/1: Heteromeric LGP2-MDA5 receptor complexes drive antiviral signaling
+2026-08-21 14:29:26,589 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-21T00:00:00', 'title': 'Heteromeric LGP2-MDA5 receptor complexes drive antiviral signaling', 'abstract': 'The innate immune receptor MDA5 serves as a first line of defense against RNA viruses by recognizing viral double-stranded RNA (dsRNA) and initiating antiviral signaling. MDA5 is upregulated by another RLR family member known as LGP2, which has been proposed to enhance MDA5 activity by recruiting MDA5 to dsRNA. However, it has remained unclear whether LGP2 functions solely as a transient recruitment factor or actively participates in signaling-competent MDA5 filaments. Here, we demonstrate that LGP2 does more than recruiting MDA5 to dsRNA, and that LGP2 becomes an integral component of MDA5 filaments. Mechanistically, LGP2 stabilizes MDA5 filaments and reduces the number of MDA5 molecules required to nucleate stable signaling-competent filaments. This interplay between the two RLR proteins is mediated by specific dsRNA-dependent interactions between the C-terminal tail of LGP2 and MDA5, resulting in a network of contacts that is essential for LGP2-mediated enhancement of MDA5 signaling. Together, these findings provide new mechanistic insight into how LGP2 regulates the assembly and persistence of signaling-competent MDA5 filaments, establishing filament architecture and stability as key determinants of MDA5 signaling. Collectively, this work provides a mechanistic framework for understanding LGP2-mediated regulation of MDA5 signaling and advances our knowledge of the molecular mechanisms governing antiviral immunity.', 'year': '2026', 'publication_date': '2026-08-21', 'doi': '10.64898/2026.08.20.745998', 'pmid': '', 'url': '', 'source': 'biorxiv', 'authors': [], 'topic_name': 'Viral Capsid Assembly', 'domain': 'virology'}
+2026-08-21 14:29:26,589 [journal_club.analyzer] INFO: Loading LLM client (cache miss): base_/home/nike/models/qwen3.6-35b-a3b
+2026-08-21 14:29:26,589 [journal_club.analyzer] INFO: Using external llama-server at: http://localhost:8080
+2026-08-21 14:30:30,376 [journal_club.analyzer] INFO: Analysis complete for paper: Heteromeric LGP2-MDA5 receptor complexes drive antiviral signaling
+2026-08-21 14:30:30,376 [journal_club.analyzer] INFO: Batch analysis complete: 1/1 papers processed
+2026-08-21 14:30:30,378 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 8
+Total papers in memory: 8
+No unanalyzed papers for topic: RNA-Protein Interactions
+Analyzing 1 papers for topic: Viral Capsid Assembly
+Analysis complete!
+
+Step 4: Generating reports...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Generating reports...
+Generated 3 reports
+
+Step 5: Final statistics...
+Journal Club Memory Summary (8 papers)
+--------------------------------------------
+  Total papers: 8
+  Topics: 2
+  Domains: 2
+
+Topics:
+  - RNA-Protein Interactions (5 papers)
+  - Viral Capsid Assembly (3 papers)
+
+Domains:
+  - biophysics (5 papers)
+  - virology (3 papers)
+
+Analyzed papers: 8/8
+
+=== Test Run Complete ===
+Finished at: Fri 21 Aug 14:30:30 BST 2026

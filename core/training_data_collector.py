@@ -24,6 +24,15 @@ from typing import Any, Dict, List
 log = logging.getLogger("journal_club.training")
 
 
+def _clean_text(text: str | None) -> str:
+    """Clean text by stripping reasoning scratchpads (<think> tags) and excess whitespace."""
+    if not text:
+        return ""
+    import re
+    cleaned = re.sub(r"<think>.*?</think>", "", str(text), flags=re.DOTALL).strip()
+    return cleaned if cleaned else str(text).strip()
+
+
 class TrainingDataCollector:
     """Collects training data from analyzed papers for LoRA fine-tuning."""
     
@@ -51,7 +60,7 @@ class TrainingDataCollector:
         
         title = paper.get("title", "")
         abstract = paper.get("abstract", "")
-        summary = paper.get("summary")
+        summary = _clean_text(paper.get("summary"))
         
         if not title or not abstract or not summary:
             return None
@@ -119,7 +128,7 @@ class TrainingDataCollector:
         
         title = paper.get("title", "")
         abstract = paper.get("abstract", "")
-        critique = paper.get("critique")
+        critique = _clean_text(paper.get("critique"))
         gap_analysis = paper.get("gap_analysis", {})
         
         if not title or not abstract or not critique:

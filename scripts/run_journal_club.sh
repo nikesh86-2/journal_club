@@ -23,7 +23,7 @@ fi
 export JOURNAL_CLUB_FAISS_INDEX_PATH="${JOURNAL_CLUB_FAISS_INDEX_PATH:-/scratch/fbsnpat/bot/VLAB2/cache/faiss_index}"
 export JOURNAL_CLUB_TIME_WINDOW_MONTHS="${JOURNAL_CLUB_TIME_WINDOW_MONTHS:-12}"
 export JOURNAL_CLUB_WEB_PORT="${JOURNAL_CLUB_WEB_PORT:-5000}"
-export JOURNAL_CLUB_LITERATURE_MEMORY_PATH="${JOURNAL_CLUB_LITERATURE_MEMORY_PATH:-literature_memory.json}"
+export JOURNAL_CLUB_LITERATURE_MEMORY_PATH="${JOURNAL_CLUB_LITERATURE_MEMORY_PATH:-cache/journal_club_memory.json}"
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
@@ -35,12 +35,15 @@ echo "Web Port: $JOURNAL_CLUB_WEB_PORT"
 echo "Memory Path: $JOURNAL_CLUB_LITERATURE_MEMORY_PATH"
 echo ""
 
-# Check Python dependencies
-echo "Checking dependencies..."
-python3 -c "import flask, yaml, langchain" 2>/dev/null || {
-    echo "Installing dependencies..."
-    pip install -r requirements.txt
-}
+# Check Python dependencies (only if not already checked)
+if [ -z "$DEPENDENCIES_CHECKED" ]; then
+    echo "Checking dependencies..."
+    python3 -c "import flask, yaml, langchain" 2>/dev/null || {
+        echo "Installing dependencies..."
+        pip install -r requirements.txt
+    }
+    export DEPENDENCIES_CHECKED=1
+fi
 
 # Add VLAB2's PARENT to path so 'VLAB2' is importable as a namespace package
 if [ -d "../VLAB2" ]; then
@@ -76,8 +79,9 @@ cycles = int(os.environ.get('JC_STREAM_CYCLES', '$cycles'))
 interval = int(os.environ.get('JC_STREAM_INTERVAL', '$interval'))
 
 # Keep the process alive so daemon threads can fetch papers
+# Per-topic workers log their own cycle counts accurately
 for i in range(cycles):
-    print(f'  Stream cycle {i+1}/{cycles} — active streams: {len(active_streams())}')
+    print(f'  Waiting for streaming... ({i+1}/{cycles} intervals elapsed, {len(active_streams())} active)')
     time.sleep(interval)
 
 print('Stopping all streams...')

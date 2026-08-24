@@ -302,6 +302,7 @@ class JournalClubMemory:
 
             if updated:
                 self.update_statistics()
+                self.save()  # Persist changes to disk
                 return True
 
             return False
@@ -413,9 +414,10 @@ class JournalClubMemory:
 
     def summary(self) -> str:
         """Return a human-readable summary of the memory state."""
+        mem = self.memory
         stats = self.get_statistics()
         lines = [
-            f"Journal Club Memory Summary ({len(stats.get('papers', []))} papers)",
+            f"Journal Club Memory Summary ({len(mem.get('papers', []))} papers)",
             "--------------------------------------------",
             f"  Total papers: {stats.get('total_papers', 0)}",
             f"  Topics: {len(stats.get('by_topic', {}))}",
@@ -433,3 +435,46 @@ class JournalClubMemory:
                 lines.append(f"  - {domain} ({count} papers)")
 
         return "\n".join(lines)
+
+    def deduplicate_papers(self) -> int:
+        """Remove duplicate papers by DOI. Returns number of papers removed."""
+        seen_dois = set()
+        unique_papers = []
+        removed_count = 0
+
+        for paper in self.memory.get("papers", []):
+            doi = paper.get('doi', '').lower().replace(' ', '')
+            if doi and doi not in seen_dois:
+                seen_dois.add(doi)
+                unique_papers.append(paper)
+            elif not doi:
+                # Papers without DOI - keep them all for now
+                unique_papers.append(paper)
+            else:
+                # Duplicate DOI - skip this paper
+                removed_count += 1
+
+        if removed_count > 0:
+            self.memory["papers"] = unique_papers
+            self.update_statistics()
+            self.save()
+            log.info("Removed %d duplicate papers by DOI", removed_count)
+
+        return removed_count
+
+    def remove_papers_by_doi(self, dois: List[str]) -> int:
+        """Remove papers with specific DOIs from memory. Returns number removed."""
+        dois_lower = {d.lower().replace(' ', '') for d in dois}
+        original_count = len(self.memory.get("papers", []))
+        self.memory["papers"] = [
+            p for p in self.memory.get("papers", [])
+            if (p.get('doi', '').lower().replace(' ', '') not in dois_lower)
+        ]
+        removed_count = original_count - len(self.memory["papers"])
+        
+        if removed_count > 0:
+            self.update_statistics()
+            self.save()
+            log.info("Removed %d papers by DOI", removed_count)
+        
+        return removed_count

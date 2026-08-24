@@ -1,0 +1,122 @@
+Activating conda environment: journal_club
+=== Journal Club Test Run ===
+Starting at: Mon 24 Aug 15:52:01 BST 2026
+
+Step 1: Cleaning up duplicates...
+Before cleanup: 11 papers
+Unique DOIs: 11
+Stats: {'total_papers': 11, 'analyzed_papers': 11, 'by_topic': {'RNA-Protein Interactions': 6, 'Viral Capsid Assembly': 5}, 'by_domain': {'biophysics': 6, 'virology': 5}, 'ids_counter': 0}
+After cleanup: 11 papers
+Cleanup complete!
+
+Step 2: Running streaming (5 cycles for more papers)...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Starting literature streaming (cycles=3, interval=30s)...
+2026-08-24 15:52:02,152 [journal_club.streaming] INFO: Streaming worker active for topic: RNA-Protein Interactions (domain: biophysics)
+2026-08-24 15:52:02,152 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: RNA-Protein Interactions
+2026-08-24 15:52:02,153 [journal_club.streaming] INFO: Streaming worker active for topic: Viral Capsid Assembly (domain: virology)
+2026-08-24 15:52:02,154 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: Viral Capsid Assembly
+2026-08-24 15:52:02,154 [journal_club.streaming] INFO: Started streaming for 2 topics
+2026-08-24 15:52:02,600 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 12
+2026-08-24 15:52:02,600 [journal_club.memory.save] INFO: Successfully appended paper Crystal structure of SARS-CoV-2 nucleocapsid protein RNA bin
+2026-08-24 15:52:02,600 [journal_club.analyzer] INFO: Loading LLM client (cache miss): base_/home/nike/models/qwen3.6-35b-a3b
+2026-08-24 15:52:02,600 [journal_club.analyzer] INFO: Using external llama-server at: http://localhost:8080
+2026-08-24 15:52:03,444 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 13
+2026-08-24 15:52:03,444 [journal_club.memory.save] INFO: Successfully appended paper Inferring Sequence-Structure Preferences of RNA-Binding Prot
+2026-08-24 15:52:35,883 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 13
+2026-08-24 15:52:35,886 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-24 15:52:35,886 [journal_club.memory.save] INFO: Successfully appended paper Generative AAV capsid diversification by latent interpolatio
+2026-08-24 15:53:10,285 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-24 15:53:10,289 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-24 15:53:10,290 [journal_club.streaming] INFO: Streaming cycle 1: fetched 60 candidates, added 1 new papers for topic: RNA-Protein Interactions
+2026-08-24 15:53:41,587 [journal_club.streaming] INFO: Streaming cycle 2: fetched 60 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 1)
+2026-08-24 15:53:43,813 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-24 15:53:44,956 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 14
+2026-08-24 15:53:44,956 [journal_club.streaming] INFO: Streaming cycle 1: fetched 60 candidates, added 2 new papers for topic: Viral Capsid Assembly
+2026-08-24 15:54:13,126 [journal_club.streaming] INFO: Streaming cycle 3: fetched 60 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 2)
+2026-08-24 15:54:17,142 [journal_club.streaming] INFO: Streaming cycle 2: fetched 60 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 1)
+2026-08-24 15:54:44,482 [journal_club.streaming] INFO: Streaming cycle 4: fetched 60 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 3)
+2026-08-24 15:54:48,059 [journal_club.streaming] INFO: Streaming cycle 3: fetched 60 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 2)
+2026-08-24 15:55:15,447 [journal_club.streaming] INFO: Streaming cycle 5: fetched 60 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 4)
+2026-08-24 15:55:19,028 [journal_club.streaming] INFO: Streaming cycle 4: fetched 60 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 3)
+2026-08-24 15:55:46,379 [journal_club.streaming] INFO: Streaming cycle 6: fetched 60 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 5)
+2026-08-24 15:55:49,890 [journal_club.streaming] INFO: Streaming cycle 5: fetched 60 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 4)
+2026-08-24 15:56:17,549 [journal_club.streaming] INFO: Streaming cycle 7: fetched 60 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 6)
+2026-08-24 15:56:20,841 [journal_club.streaming] INFO: Streaming cycle 6: fetched 60 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 5)
+2026-08-24 15:56:48,672 [journal_club.streaming] INFO: Streaming cycle 8: fetched 60 candidates, no new papers for topic: RNA-Protein Interactions (idle cycle 7)
+2026-08-24 15:56:51,751 [journal_club.streaming] INFO: Streaming cycle 7: fetched 60 candidates, no new papers for topic: Viral Capsid Assembly (idle cycle 6)
+2026-08-24 15:57:02,155 [journal_club.analyzer] INFO: LLM clients cleaned up successfully (0 removed, 1 preserved)
+Started 2 topic streams
+  Waiting for streaming... (1/5 intervals elapsed, 2 active)
+  Waiting for streaming... (2/5 intervals elapsed, 2 active)
+  Waiting for streaming... (3/5 intervals elapsed, 2 active)
+  Waiting for streaming... (4/5 intervals elapsed, 2 active)
+  Waiting for streaming... (5/5 intervals elapsed, 2 active)
+Stopping all streams...
+Streaming complete.
+
+Step 2.5: Running post-streaming deduplication...
+Removed 3 duplicate papers after streaming
+Removed 0 misclassified papers from wrong topics
+
+Step 3: Running analysis...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Running paper analysis...
+Total papers in memory: 11
+No unanalyzed papers for topic: RNA-Protein Interactions
+No unanalyzed papers for topic: Viral Capsid Assembly
+Analysis complete!
+
+Step 4: Generating reports...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: literature_memory.json
+
+Generating reports...
+Generated 3 reports
+
+Step 5: Final statistics...
+Journal Club Memory Summary (11 papers)
+--------------------------------------------
+  Total papers: 11
+  Topics: 2
+  Domains: 2
+
+Topics:
+  - RNA-Protein Interactions (6 papers)
+  - Viral Capsid Assembly (5 papers)
+
+Domains:
+  - biophysics (6 papers)
+  - virology (5 papers)
+
+Analyzed papers: 11/11
+
+Step 6: Starting web server & API on http://localhost:5000...
+Web server running with PID 45509 (Access http://localhost:5000/api/stats)
+
+=== Test Run Complete ===
+Finished at: Mon 24 Aug 15:57:02 BST 2026
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 906-427-949
+127.0.0.1 - - [24/Aug/2026 15:58:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 15:58:33] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [24/Aug/2026 16:00:44] "GET /api/stats HTTP/1.1" 200 -

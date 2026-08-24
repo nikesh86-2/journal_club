@@ -1,11 +1,14 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-model_name = "/scratch/fbsnpat/bot/journal_club/mistral-7b"
-print("Loading tokenizer...")
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+from llama_cpp import Llama
+
+model_path = "/home/nike/models/qwen3.6-35b-a3b/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
 print("Loading model...")
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    device_map="auto",  # or "cuda:0" if you have a specific GPU
-    torch_dtype="auto"
+llm = Llama(
+    model_path=model_path,
+    n_gpu_layers=-1,  # use GPU if available
+    n_ctx=4096,
 )
 print("Success!")
+
+# Example usage
+output = llm("Hello, world!", max_tokens=100)
+print(output["choices"][0]["text"])

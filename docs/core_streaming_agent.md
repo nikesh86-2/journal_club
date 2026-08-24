@@ -19,9 +19,15 @@ The streaming agent continuously ingests recent literature from Semantic Scholar
 - FAISS index also provides deduplication at storage layer
 
 ### Filtering Pipeline
-1. **Time Filtering**: Papers older than time window are excluded
-2. **Domain Relevance**: Papers must match domain-specific terms
-3. **Avoid Terms**: Papers with avoid terms are excluded
+1. **Hard Rejection (`BAD_TERMS`)**: Excludes out-of-scope papers (machine learning, robotics, NLP, lab automation, etc.)
+2. **Negative Filtering (`avoid_terms`)**: Papers matching configured `avoid_terms` are excluded
+3. **Time Filtering**: Papers outside the configured `time_window_months` are excluded
+4. **Two-Tier AND Relevance Gate**: Papers must match BOTH topic-specific terms (`target_classes` / `motif_terms`) AND domain-level `relevance_terms`
+
+## Data Sources & Search
+
+### Europe PMC Full-Text Preprint Search
+Literature ingestion utilizes the Europe PMC REST API (`https://www.ebi.ac.uk/europepmc/webservices/rest/search`), targeting preprint literature (`SRC:PPR` which indexes bioRxiv, medRxiv, and other preprint servers) with support for Boolean keyword queries and publication date ranges.
 
 ## Configuration
 
@@ -35,7 +41,7 @@ The streaming agent continuously ingests recent literature from Semantic Scholar
 | `JOURNAL_CLUB_STREAM_MAX_IDLE` | `0` | Max idle cycles before stop (0 = infinite) |
 | `JOURNAL_CLUB_STREAM_MAX_CYCLES` | `0` | Max total cycles (0 = infinite) |
 | `JOURNAL_CLUB_DEDUP_ABSTRACT_PREFIX_LEN` | `500` | Characters for abstract-based dedup |
-| `JOURNAL_CLUB_TIME_WINDOW_MONTHS` | `12` | Time window for recent papers |
+| `JOURNAL_CLUB_TIME_WINDOW_MONTHS` | `12` | Time window for recent papers (0 or negative = unlimited) |
 
 ### YAML Configuration
 
@@ -43,7 +49,7 @@ The streaming agent continuously ingests recent literature from Semantic Scholar
 ```yaml
 domains:
   biophysics:
-    relevance_terms: ["molecular dynamics", "docking", "binding affinity"]
+    relevance_terms: ["molecular dynamics", "docking", "binding affinity", "structure", "cryo-em"]
     gap_categories: ["methodology", "controls", "statistics", "reproducibility"]
 ```
 
@@ -52,12 +58,24 @@ domains:
 topics:
   - name: "RNA-Protein Interactions"
     domain_terms:
-      target_classes: ["rna-binding", "ribonucleoprotein"]
-      motif_terms: ["stem-loop", "hairpin"]
-      avoid_terms: ["dna-binding"]
+      target_classes: ["rna-binding", "ribonucleoprotein", "rrm", "kh domain"]
+      motif_terms: ["stem-loop", "hairpin", "recognition motif"]
+      avoid_terms: ["dna-binding", "transcription factor", "fmri"]
 ```
 
 ## Key Functions
+
+### `fetch_europepmc_papers(query, limit, time_window_months)`
+
+Fetch preprint literature from Europe PMC with full-text search and date range filtering.
+
+**Parameters:**
+- `query`: Query string
+- `limit`: Maximum papers to fetch (default: 25)
+- `time_window_months`: Months window for publication date cutoff
+
+**Returns:**
+- List of paper dictionaries containing title, abstract, DOI, year, source, and authors.
 
 ### `start_streaming(topic_name, domain, queries, time_window_months, memory)`
 
@@ -88,7 +106,7 @@ memory = JournalClubMemory()
 started = start_streaming(
     topic_name="RNA-Protein Interactions",
     domain="biophysics",
-    queries=["RNA protein binding", "RNA-protein complex"],
+    queries=["RNA protein binding interface", "RNA-protein complex structure"],
     time_window_months=12,
     memory=memory
 )
@@ -97,6 +115,37 @@ started = start_streaming(
 ### `stream_papers(topic_name, domain, queries, stop_event, interval, batch_size, time_window_months, memory)`
 
 Main streaming loop (runs in background thread).
+
+---
+
+## Filtering Functions
+
+### `is_domain_relevant(text, domain, topic_terms)`
+
+Check if paper text is relevant to domain/topic using two-tier AND logic.
+
+**Parameters:**
+- `text`: Paper text (title + abstract)
+- `domain`: Domain name
+- `topic_terms`: Topic-specific terms dict
+
+**Returns:**
+- `True` if relevant, `False` otherwise
+
+**Behavior:**
+1. Checks against `BAD_TERMS` blocklist (hard rejection).
+2. Checks against topic `avoid_terms` (hard rejection).
+3. Evaluates topic-specific terms (`target_classes` + `motif_terms`) and domain `relevance_terms`.
+4. Requires BOTH a topic match and a domain match when both are configured.
+
+**Example:**
+```python
+relevant = is_domain_relevant(
+    text="Crystal structure of RNA-binding domain reveals RNA recognition motif...",
+    domain="biophysics",
+    topic_terms={"target_classes": ["rna-binding"], "avoid_terms": ["dna-binding"]}
+)
+```
 
 **Parameters:**
 - `topic_name`: Topic name
