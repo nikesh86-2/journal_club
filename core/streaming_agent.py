@@ -5,16 +5,16 @@ Background literature ingestion for Journal Club.
 
 Responsibilities:
   - Start one background stream per topic/domain profile
-  - Fetch papers using semantic search (shared with VLAB2)
+  - Fetch papers using semantic search
   - Filter for domain-specific relevance using configurable terms
   - Filter by publication date (configurable time window)
   - Deduplicate papers by DOI, normalized title
-  - Append genuinely new documents to FAISS (shared with VLAB2)
+  - Append genuinely new documents to FAISS
   - Ingest papers into JournalClubMemory
 
 Important behaviour:
   - "No new papers" is logged at DEBUG, not INFO
-  - FAISS path is configurable (default: VLAB2 location)
+  - FAISS path is configurable
   - Domain terms are loaded from YAML configuration
 """
 from __future__ import annotations
@@ -30,27 +30,12 @@ from typing import Dict, List, Set
 
 import yaml
 
-# Try to import from VLAB2, fallback to local implementation
-try:
-    import sys
-    vlab2_path = Path(__file__).parents[2] / "VLAB2"
-    if vlab2_path.exists():
-        # Add the PARENT of VLAB2 so that 'VLAB2' is importable as a namespace package
-
-        sys.path.insert(0, str(vlab2_path.parent))
-
-    from VLAB2.research.research_agent_adaptive import (
-        CachedSentenceTransformerEmbeddings,
-        cached_semantic_search,
-    )
-    from langchain_community.vectorstores import FAISS
-    from langchain_core.documents import Document
-except ImportError:
-    # Fallback implementations if VLAB2 not available
-    CachedSentenceTransformerEmbeddings = None
-    cached_semantic_search = None
-    FAISS = None
-    Document = None
+from .research_agent_adaptive import (
+    CachedSentenceTransformerEmbeddings,
+    cached_semantic_search,
+)
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 
 from .literature_memory import JournalClubMemory
 from .paper_analyzer import cleanup_llm_clients

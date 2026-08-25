@@ -11,8 +11,8 @@ A literature analysis pipeline for journal club discussions that ingests recent 
 - **Configurable Domains**: Support for multiple research domains via YAML configuration
 - **Web Interface**: Flask-based web interface for browsing papers and analysis
 - **Markdown Reports**: Generate detailed markdown reports for topics and individual papers
-- **Shared FAISS Index**: Can share FAISS index with VLAB2 or use standalone
-- **LoRA Fine-Tuning**: Fine-tune the model on ingested literature to improve scientific knowledge (integrates with VLAB2's training pipeline)
+- **FAISS Index**: Uses local FAISS index for semantic search
+- **LoRA Fine-Tuning**: Fine-tune the model on ingested literature to improve scientific knowledge
 
 ## Installation
 
@@ -65,7 +65,7 @@ domains:
 
 ### Environment Variables (.env)
 ```bash
-# Shared with VLAB2
+# personal details
 S2_API_KEY=your_semantic_scholar_api_key
 ENTREZ_EMAIL=your_email@example.com
 
@@ -214,16 +214,6 @@ journal_club/
 - flask (web interface)
 - jinja2 (templating)
 
-## Integration with VLAB2
-
-The journal club pipeline can share components with VLAB2:
-- **FAISS Index**: Use VLAB2's FAISS index for semantic search
-- **Semantic Search**: Use VLAB2's cached_semantic_search function
-- **LLM Integration**: Use VLAB2's LLM utilities
-- **LoRA Training**: Use VLAB2's training infrastructure for fine-tuning
-
-Set `JOURNAL_CLUB_FAISS_INDEX_PATH` to point to your FAISS index directory (default: ./cache/faiss_index).
-
 ## LoRA Fine-Tuning
 
 The Journal Club pipeline supports LoRA fine-tuning to improve the model's scientific knowledge using ingested literature.
@@ -242,7 +232,7 @@ Training data is automatically collected from analyzed papers in the following f
 
 1. **Data Collection**: When 200+ papers are analyzed, training data is collected
 2. **Dataset Conversion**: JSONL data is converted to HuggingFace format
-3. **LoRA Training**: VLAB2's training pipeline fine-tunes the model
+3. **LoRA Training**: Training pipeline fine-tunes the model
 4. **Model Merging**: LoRA adapter is merged into base model
 5. **Model Usage**: Fine-tuned model is used for analysis and recommendations
 
@@ -277,7 +267,7 @@ JOURNAL_CLUB_FINETUNED_MODEL_PATH=training/journal_club_merged_model
 ### Training Configuration
 
 Training hyperparameters are configured in `training/journal_club_training_config.yaml`:
-- Base model: Qwen2.5-32B-Instruct (same as VLAB2)
+- Base model: User configured, or mistral 7B
 - LoRA rank: 16, alpha: 32, dropout: 0.1
 - Training epochs: 2 (literature domain)
 - Learning rate: 1.5e-5
@@ -285,7 +275,7 @@ Training hyperparameters are configured in `training/journal_club_training_confi
 
 ## License
 
-This project is part of the Virtual Lab ecosystem. See LICENSE file for details.
+See LICENSE file for details.
 
 ## Contributing
 

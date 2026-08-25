@@ -109,7 +109,7 @@ journal_club/
 1. **Modularity**: Each component has a single responsibility and can be used independently
 2. **Configurability**: All behavior is configurable via YAML and environment variables
 3. **Extensibility**: New domains, topics, and analysis types can be added without code changes
-4. **Integration**: Shares infrastructure with VLAB2 (FAISS, semantic search, training)
+4. **Integration**: Uses local infrastructure (FAISS, semantic search, training)
 5. **Persistence**: All data is persisted in JSON format for transparency
 6. **Quality Filtering**: Only high-quality papers are used for training and recommendations
 7. **Continuous Improvement**: LoRA fine-tuning enables model improvement over time
@@ -118,24 +118,14 @@ journal_club/
 
 - **Language**: Python 3.8+
 - **Literature Search**: Semantic Scholar API
-- **Vector Storage**: FAISS (shared with VLAB2)
+- **Vector Storage**: FAISS
 - **Embeddings**: Sentence Transformers
-- **LLM**: Qwen2.5-32B-Instruct (shared with VLAB2)
-- **Fine-tuning**: LoRA via transformers/peft (VLAB2 infrastructure)
+- **LLM**: Configured model
+- **Fine-tuning**: LoRA via transformers/peft
 - **Web Framework**: Flask
 - **Configuration**: YAML
 - **Data Format**: JSON, JSONL
 
-## Integration Points with VLAB2
-
-| Component | VLAB2 Component | Purpose |
-|-----------|---------------|---------|
-| FAISS Index | VLAB2 FAISS | Shared semantic search index |
-| Semantic Search | cached_semantic_search | Paper retrieval |
-| LLM | get_llm | LLM client |
-| Training | train_lora.py | LoRA fine-tuning |
-| Training | merge_lora.py | Model merging |
-| Training | model_version_tracker.py | Model versioning |
 
 ## Performance Considerations
 

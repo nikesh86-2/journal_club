@@ -33,13 +33,6 @@ fi
 echo "Installing Python dependencies..."
 pip install -r requirements.txt
 
-# Check if VLAB2 is available for shared components
-if [ -d "../VLAB2" ]; then
-    echo "VLAB2 found at ../VLAB2 - will use shared FAISS index and semantic search"
-else
-    echo "VLAB2 not found - will use standalone configuration"
-fi
-
 # Make scripts executable
 chmod +x scripts/*.sh
 

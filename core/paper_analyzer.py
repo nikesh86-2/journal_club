@@ -28,21 +28,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
 
-# Try to import LLM utilities from VLAB2
-try:
-    import sys
-    vlab2_path = Path(__file__).parents[2] / "VLAB2"
-    if vlab2_path.exists():
-        # Add the PARENT of VLAB2 so that 'VLAB2' is importable as a namespace package
-        sys.path.insert(0, str(vlab2_path.parent))
-
-    from VLAB2.orchestration.llm import get_llm
-except ImportError:
-    get_llm = None
-
 log = logging.getLogger("journal_club.analyzer")
 
-# Ensure analyzer logs are persisted to disk (useful when SLURM kills the process)
+# Ensure analyzer logs are persisted to disk (if SLURM kills the process)
 try:
     logs_dir = Path(__file__).parents[1] / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
@@ -473,7 +461,7 @@ def _parse_gap_analysis_with_retry(
 
 
 def get_llm_client(use_finetuned: bool = None):
-    """Get LLM client (from llama-server, VLAB2, fine-tuned model,
+    """Get LLM client (from llama-server,  fine-tuned model,
     local base model, or fallback). Uses thread-safe caching.
     """
 
@@ -984,23 +972,6 @@ def get_llm_client(use_finetuned: bool = None):
 
                 if torch and torch.cuda.is_available():
                     torch.cuda.empty_cache()
-
-        # ------------------------------------------------------------------
-        # Try VLAB2's LLM
-        # ------------------------------------------------------------------
-        if get_llm is not None:
-            try:
-                llm = get_llm()
-
-                if llm is not None:
-                    _cached_llm_clients[cache_key] = llm
-                    return llm
-
-            except Exception as e:
-                log.warning(
-                    "Failed to load VLAB2 LLM: %s",
-                    e,
-                )
 
         # ------------------------------------------------------------------
         # Fallback to direct OpenAI if available

@@ -13,8 +13,8 @@
 │ • Load environment variables (.env)                                                 │
 │ • Load configuration (config/topics.yaml, config/domains.yaml)                      │
 │ • Initialize JournalClubMemory (literature_memory.json)                              │
-│ • Setup FAISS index (shared with VLAB2 or standalone)                               │
-│ • Configure LLM (VLAB2 API, fine-tuned, or local model)                              │
+│ • Setup FAISS index                                                            │
+│ • Configure LLM (fine-tuned or local model)                                  │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
@@ -105,10 +105,10 @@
                                         │
                                         ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
-│ 7. LoRA FINE-TUNING (Optional - VLAB2 Integration)                                   │
+│ 7. LoRA FINE-TUNING (Optional)                                                       │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
-│ • Use VLAB2 training infrastructure                                                 │
-│ • Base model: Qwen2.5-32B-Instruct (or configured model)                            │
+│ • Use local training infrastructure                                                 │
+│ • Base model: Configured model
 │ • LoRA rank: 16, alpha: 32, dropout: 0.1                                           │
 │ • Training epochs: 2                                                                 │
 │ • Learning rate: 1.5e-5                                                             │
@@ -155,13 +155,6 @@ Initialization → Streaming (3 cycles) → Analysis → Reports → Training Ch
 - **Analyzer Worker**: run_analyzer_worker.slurm (CPU node, isolated process)
 
 ## Key Integration Points
-
-### VLAB2 Integration
-- **FAISS Index**: Shared semantic search index
-- **Semantic Search**: cached_semantic_search function
-- **LLM Client**: get_llm from VLAB2.orchestration.llm
-- **Training Pipeline**: VLAB2's train_lora.py and merge_lora.py
-- **Model Versioning**: VLAB2's model_version_tracker.py
 
 ### External APIs
 - **Semantic Scholar API**: Literature search and metadata

@@ -39,7 +39,6 @@ Get LLM client with fine-tuned model support.
 
 **Behavior:**
 - Loads fine-tuned model if enabled and available
-- Falls back to VLAB2's LLM
 - Falls back to ChatOpenAI
 - Returns `None` if no LLM available
 
