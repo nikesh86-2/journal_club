@@ -1,0 +1,32 @@
+name: journal_club
+channels:
+  - conda-forge
+  - pytorch
+  - huggingface
+dependencies:
+  - python=3.10
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=12.4  # More stable CUDA version
+  - transformers
+  - peft
+  - accelerate
+  - datasets
+  - bitsandbytes
+  - sentence-transformers
+  - faiss-gpu  # or faiss-cpu if no GPU
+  - langchain-core
+  - langchain-community
+  - langchain-huggingface
+  - flask
+  - pyyaml
+  - requests
+  - biopython
+  - pydantic
+  - psutil
+  - python-dotenv
+  - pip
+  - pip:
+    - gptqmodel
+    - llama-cpp-python  # For GGUF model support

@@ -21,6 +21,7 @@ log = logging.getLogger("journal_club.training")
 
 INPUT_DIR = Path("training/journal_club_data")
 SAVE_PATH = Path("training/journal_club_hf_dataset")
+LOCKED_SPLIT_FILE = Path("training/journal_club_data/locked_split.json")
 
 
 SYSTEM_PROMPT = (
@@ -95,9 +96,32 @@ def load_jsonl_files(input_dir: Path) -> list:
                     text = render_instruction_example(item)
                 
                 if text.strip():
-                    rows.append({"text": text})
+                    # Extract paper identifier for locked split
+                    paper_doi = item.get("metadata", {}).get("paper_doi") or item.get("metadata", {}).get("title") or f"unknown_{len(rows)}"
+                    rows.append({"text": text, "paper_id": paper_doi})
     
     return rows
+
+
+def load_locked_split() -> dict | None:
+    """Load locked train/test split if it exists."""
+    if LOCKED_SPLIT_FILE.exists():
+        with open(LOCKED_SPLIT_FILE) as f:
+            return json.load(f)
+    return None
+
+
+def save_locked_split(train_dois: list, test_dois: list) -> None:
+    """Save locked train/test split."""
+    split_data = {
+        "train_dois": train_dois,
+        "test_dois": test_dois,
+        "created_at": str(Path(__file__).stat().st_mtime)
+    }
+    LOCKED_SPLIT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOCKED_SPLIT_FILE, "w") as f:
+        json.dump(split_data, f, indent=2)
+    log.info("Saved locked split to %s", LOCKED_SPLIT_FILE)
 
 
 def main() -> None:
@@ -110,13 +134,38 @@ def main() -> None:
         log.error("No training examples found. Aborting.")
         return
     
-    # Shuffle with fixed seed for reproducibility
-    random.seed(42)
-    random.shuffle(rows)
+    # Check if locked split exists
+    locked_split = load_locked_split()
+    
+    if locked_split:
+        log.info("Using locked split from %s", LOCKED_SPLIT_FILE)
+        train_dois = set(locked_split.get("train_dois", []))
+        test_dois = set(locked_split.get("test_dois", []))
+        
+        train_rows = [r for r in rows if r.get("paper_id") in train_dois]
+        test_rows = [r for r in rows if r.get("paper_id") in test_dois]
+        
+        # Handle new papers not in locked split
+        new_papers = [r for r in rows if r.get("paper_id") not in train_dois and r.get("paper_id") not in test_dois]
+        if new_papers:
+            log.info("Found %d new papers not in locked split, adding to train", len(new_papers))
+            train_rows.extend(new_papers)
+    else:
+        log.info("No locked split found, creating new split")
+        # Shuffle with fixed seed for reproducibility
+        random.seed(42)
+        random.shuffle(rows)
 
-    split_idx = max(1, int(len(rows) * 0.9))
-    train_rows = rows[:split_idx]
-    test_rows = rows[split_idx:] if len(rows) > 1 else rows[:1]
+        split_idx = max(1, int(len(rows) * 0.9))
+        train_rows = rows[:split_idx]
+        test_rows = rows[split_idx:] if len(rows) > 1 else rows[:1]
+        
+        # Extract paper DOIs for locked split
+        train_dois = list(set(r.get("paper_id") for r in train_rows))
+        test_dois = list(set(r.get("paper_id") for r in test_rows))
+        
+        # Save locked split
+        save_locked_split(train_dois, test_dois)
 
     SAVE_PATH.mkdir(parents=True, exist_ok=True)
 
@@ -126,11 +175,11 @@ def main() -> None:
 
     with open(train_jsonl, "w", encoding="utf-8") as f:
         for r in train_rows:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+            f.write(json.dumps({"text": r["text"]}, ensure_ascii=False) + "\n")
 
     with open(test_jsonl, "w", encoding="utf-8") as f:
         for r in test_rows:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+            f.write(json.dumps({"text": r["text"]}, ensure_ascii=False) + "\n")
 
     log.info("Saved formatted JSONL splits to %s and %s", train_jsonl, test_jsonl)
 
@@ -138,8 +187,8 @@ def main() -> None:
     try:
         from datasets import Dataset, DatasetDict
         dataset = DatasetDict({
-            "train": Dataset.from_list(train_rows),
-            "test": Dataset.from_list(test_rows)
+            "train": Dataset.from_list([{"text": r["text"]} for r in train_rows]),
+            "test": Dataset.from_list([{"text": r["text"]} for r in test_rows])
         })
         dataset.save_to_disk(str(SAVE_PATH / "hf_disk"))
         log.info("Saved HF Dataset to %s", SAVE_PATH / "hf_disk")

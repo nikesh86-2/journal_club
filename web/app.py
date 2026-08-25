@@ -174,6 +174,19 @@ def get_topic_config_by_name(name: str):
     return None
 
 
+@app.route("/api/refresh-stats", methods=["POST"])
+def api_refresh_stats():
+    """Force refresh statistics from current papers."""
+    try:
+        memory = get_memory()
+        memory.update_statistics()
+        memory.save()
+        stats = memory.get_statistics()
+        return jsonify({"status": "success", "stats": stats})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route("/api/config/sources", methods=["GET", "POST"])
 def api_config_sources():
     """Get or update API and LLM settings."""

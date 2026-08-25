@@ -25,7 +25,7 @@ from core.model_version_tracker import (ModelVersionTracker, JournalClubVersion)
 
 
 
-log = logging.getLogger("virtual_lab.training")
+log = logging.getLogger("journal_club.training")
 
 
 CONFIG_PATH = 'training/journal_club_training_config.yaml'
@@ -142,7 +142,7 @@ def merge_lora_adapter() -> None:
     set_active_model(str(MERGED_OUTPUT_DIR), version_id)
 
     # Cleanup old versions
-    max_versions = int(os.getenv("VLAB_MAX_MODEL_VERSIONS", "3"))
+    max_versions = int(os.getenv("JOURNAL_CLUB_MAX_MODEL_VERSIONS", "3"))
     cleanup_old_versions(max_versions)
 
     log.info("=== LoRA MERGE COMPLETE ===")

@@ -1,0 +1,6 @@
+Activating conda environment: journal_club
+
+EnvironmentNameNotFound: Could not find conda environment: journal_club
+You can list all discoverable environments with `conda info --envs`.
+
+

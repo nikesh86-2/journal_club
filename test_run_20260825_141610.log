@@ -1,0 +1,233 @@
+Activating conda environment: journal_club
+=== Journal Club Test Run ===
+Starting at: Tue 25 Aug 14:16:15 BST 2026
+
+Step 1: Cleaning up duplicates...
+Before cleanup: 45 papers
+Unique DOIs: 45
+Stats: {'total_papers': 45, 'analyzed_papers': 45, 'by_topic': {'RNA-Protein Interactions': 10, 'Viral Capsid Assembly': 10, 'General Ingest': 25}, 'by_domain': {'biophysics': 10, 'virology': 10, 'general': 25}, 'ids_counter': 0}
+After cleanup: 45 papers
+Cleanup complete!
+
+Step 2: Running streaming (5 cycles for more papers)...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: cache/journal_club_memory.json
+
+Starting literature streaming (cycles=3, interval=30s)...
+2026-08-25 14:16:15,876 [journal_club.streaming] INFO: Streaming worker active for topic: RNA-Protein Interactions (domain: biophysics)
+2026-08-25 14:16:15,876 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: RNA-Protein Interactions
+2026-08-25 14:16:15,876 [journal_club.streaming] INFO: Streaming worker active for topic: Viral Capsid Assembly (domain: virology)
+2026-08-25 14:16:15,876 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: Viral Capsid Assembly
+2026-08-25 14:16:15,877 [journal_club.streaming] INFO: Streaming worker active for topic: Plastic degrading enzymes (domain: general)
+2026-08-25 14:16:15,877 [journal_club.streaming] INFO: Started streaming literature ingestion for topic: Plastic degrading enzymes
+2026-08-25 14:16:15,877 [journal_club.streaming] INFO: Started streaming for 3 topics
+2026-08-25 14:16:21,356 [journal_club.streaming] INFO: Streaming cycle 1: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 1)
+2026-08-25 14:16:24,378 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 46
+2026-08-25 14:16:24,378 [journal_club.memory.save] INFO: Successfully appended paper Modeling Viral Capsid Assembly: A Review of Computational St
+2026-08-25 14:16:24,378 [journal_club.analyzer] INFO: Loading LLM client (cache miss): base_/home/nike/models/qwen3.6-35b-a3b
+2026-08-25 14:16:24,378 [journal_club.analyzer] INFO: Using external llama-server at: http://localhost:8080
+2026-08-25 14:16:51,923 [journal_club.streaming] INFO: Streaming cycle 2: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 2)
+2026-08-25 14:16:53,882 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 46
+2026-08-25 14:16:53,886 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 47
+2026-08-25 14:16:53,886 [journal_club.memory.save] INFO: Successfully appended paper Critical mechanistic features of HIV-1 viral capsid assembly
+2026-08-25 14:17:00,934 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 48
+2026-08-25 14:17:00,934 [journal_club.memory.save] INFO: Successfully appended paper A pair-conformation-dependent scoring function for evaluatin
+2026-08-25 14:17:24,915 [journal_club.streaming] INFO: Streaming cycle 3: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 3)
+2026-08-25 14:17:36,732 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 48
+2026-08-25 14:17:36,737 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 49
+2026-08-25 14:17:36,737 [journal_club.memory.save] INFO: Successfully appended paper RNA-induced Allosteric Coupling Drives Viral Capsid Assembly
+2026-08-25 14:17:56,479 [journal_club.streaming] INFO: Streaming cycle 4: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 4)
+2026-08-25 14:18:00,263 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 49
+2026-08-25 14:18:00,271 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 50
+2026-08-25 14:18:00,271 [journal_club.memory.save] INFO: Successfully appended paper Structure of the zinc-finger antiviral protein in complex wi
+2026-08-25 14:18:27,175 [journal_club.streaming] INFO: Streaming cycle 5: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 5)
+2026-08-25 14:18:48,865 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 50
+2026-08-25 14:18:48,869 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 51
+2026-08-25 14:18:48,869 [journal_club.memory.save] INFO: Successfully appended paper Hepatitis B Virus Core Protein Domains Essential for Viral C
+2026-08-25 14:18:57,687 [journal_club.streaming] INFO: Streaming cycle 6: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 6)
+2026-08-25 14:19:28,238 [journal_club.streaming] INFO: Streaming cycle 7: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 7)
+2026-08-25 14:19:33,859 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 51
+2026-08-25 14:19:33,864 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 52
+2026-08-25 14:19:33,864 [journal_club.memory.save] INFO: Successfully appended paper Bioinformatics Tools and Benchmarks for Computational Dockin
+2026-08-25 14:19:59,220 [journal_club.streaming] INFO: Streaming cycle 8: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 8)
+2026-08-25 14:20:25,129 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 52
+2026-08-25 14:20:25,136 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 53
+2026-08-25 14:20:25,136 [journal_club.memory.save] INFO: Successfully appended paper Heat shock protein 70 and heat shock protein 90 synergistica
+2026-08-25 14:20:29,795 [journal_club.streaming] INFO: Streaming cycle 9: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 9)
+2026-08-25 14:20:43,456 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 53
+2026-08-25 14:20:43,463 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 54
+2026-08-25 14:20:43,463 [journal_club.memory.save] INFO: Successfully appended paper 3dRPC: a web server for 3D RNA-protein structure prediction
+2026-08-25 14:21:00,470 [journal_club.streaming] INFO: Streaming cycle 10: fetched 40 candidates, no new papers for topic: Plastic degrading enzymes (idle cycle 10)
+2026-08-25 14:21:15,879 [journal_club.analyzer] INFO: LLM clients cleaned up successfully (0 removed, 1 preserved)
+Started 3 topic streams
+  Waiting for streaming... (1/5 intervals elapsed, 3 active)
+  Waiting for streaming... (2/5 intervals elapsed, 3 active)
+  Waiting for streaming... (3/5 intervals elapsed, 3 active)
+  Waiting for streaming... (4/5 intervals elapsed, 3 active)
+  Waiting for streaming... (5/5 intervals elapsed, 3 active)
+Stopping all streams...
+Streaming complete.
+
+Step 2.5: Running post-streaming deduplication...
+Removed 5 duplicate papers after streaming
+Removed 0 misclassified papers from wrong topics
+
+Step 3: Running analysis...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: cache/journal_club_memory.json
+
+Running paper analysis...
+2026-08-25 14:21:17,144 [journal_club.analyzer] INFO: Analyzing batch of 4 papers (parallel, 4 workers)
+2026-08-25 14:21:17,144 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-25T00:00:00', 'title': 'A pair-conformation-dependent scoring function for evaluating 3D RNA-protein complex structures', 'abstract': 'Computational prediction of RNA-protein complex 3D structures includes two basic steps: one is sampling possible structures and another is scoring the sampled structures to pick out the correct one. At present, constructing accurate scoring functions is still not well solved and the performances of the scoring functions usually depend on used benchmarks. Here we propose a pair-conformation-dependent scoring function, 3dRPC-Score, for 3D RNA-protein complex structure prediction by considering the nucleotide-residue pairs having the same energy if their conformations are similar, instead of the distance-only dependence of the most existing scoring functions. Benchmarking shows that 3dRPC-Score has a consistent performance in three test sets.', 'year': 2017, 'publication_date': '', 'doi': '10.1371/journal.pone.0174662', 'pmid': '28358834', 'url': 'https://www.semanticscholar.org/paper/977e00046e3596ad0b8153ba3745b0de07405882', 'source': 'semantic_scholar', 'authors': [], 'topic_name': 'RNA-Protein Interactions', 'domain': 'biophysics'}
+2026-08-25 14:21:17,144 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-25T00:00:00', 'title': 'Structure of the zinc-finger antiviral protein in complex with RNA reveals a mechanism for selective targeting of CG-rich viral sequences', 'abstract': 'Significance Zinc finger antiviral protein (ZAP) protects cells from infection by diverse RNA viruses through its ability to specifically detect and deplete viral RNAs that have a greater frequency of CG dinucleotides than host messenger RNAs. We solved an X-ray crystal structure of the domain of ZAP that recognizes RNA and found that a crucial component of RNA recognition by ZAP is a pocket on the protein surface that can accommodate a CG dinucleotide but no other dinucleotides. The structure explains in atomic detail how ZAP is able to selectively recognize CG-rich viral RNAs as foreign and thereby provide hosts with a defense against viral infection. Infection of animal cells by numerous viruses is detected and countered by a variety of means, including recognition of nonself nucleic acids. The zinc finger antiviral protein (ZAP) depletes cytoplasmic RNA that is recognized as foreign in mammalian cells by virtue of its elevated CG dinucleotide content compared with endogenous mRNAs. Here, we determined a crystal structure of a protein-RNA complex containing the N-terminal, 4-zinc finger human (h) ZAP RNA-binding domain (RBD) and a CG dinucleotide-containing RNA target. The structure reveals in molecular detail how hZAP is able to bind selectively to CG-rich RNA. Specifically, the 4 zinc fingers create a basic patch on the hZAP RBD surface. The highly basic second zinc finger contains a pocket that selectively accommodates CG dinucleotide bases. Structure guided mutagenesis, cross-linking immunoprecipitation sequencing assays, and RNA affinity assays show that the structurally defined CG-binding pocket is not required for RNA binding per se in human cells. However, the pocket is a crucial determinant of high-affinity, specific binding to CG dinucleotide-containing RNA. Moreover, variations in RNA-binding specificity among a panel of CG-binding pocket mutants quantitatively predict their selective antiviral activity against a CG-enriched HIV-1 strain. Overall, the hZAP RBD RNA structure provides an atomic-level explanation for how ZAP selectively targets foreign, CG-rich RNA.', 'year': 2019, 'publication_date': '', 'doi': '10.1073/pnas.1913232116', 'pmid': '31719195', 'url': 'https://www.semanticscholar.org/paper/f79b1cc3376f364537555f67f1ac6608847cf3ff', 'source': 'semantic_scholar', 'authors': [], 'topic_name': 'RNA-Protein Interactions', 'domain': 'biophysics'}
+2026-08-25 14:21:17,145 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-25T00:00:00', 'title': 'Bioinformatics Tools and Benchmarks for Computational Docking and 3D Structure Prediction of RNA-Protein Complexes', 'abstract': 'RNA-protein (RNP) interactions play essential roles in many biological processes, such as regulation of co-transcriptional and post-transcriptional gene expression, RNA splicing, transport, storage and stabilization, as well as protein synthesis. An increasing number of RNP structures would aid in a better understanding of these processes. However, due to the technical difficulties associated with experimental determination of macromolecular structures by high-resolution methods, studies on RNP recognition and complex formation present significant challenges. As an alternative, computational prediction of RNP interactions can be carried out. Structural models obtained by theoretical predictive methods are, in general, less reliable compared to models based on experimental measurements but they can be sufficiently accurate to be used as a basis for to formulating functional hypotheses. In this article, we present an overview of computational methods for 3D structure prediction of RNP complexes. We discuss currently available methods for macromolecular docking and for scoring 3D structural models of RNP complexes in particular. Additionally, we also review benchmarks that have been developed to assess the accuracy of these methods.', 'year': 2018, 'publication_date': '', 'doi': '10.3390/genes9090432', 'pmid': '30149645', 'url': 'https://www.semanticscholar.org/paper/49259824d268108806137b6e244a46b245f0f07f', 'source': 'semantic_scholar', 'authors': [], 'topic_name': 'RNA-Protein Interactions', 'domain': 'biophysics'}
+2026-08-25 14:21:17,145 [journal_club.analyzer] INFO: Analyzing paper: {'schema_version': 'journal_club_paper.v1', 'timestamp': '2026-08-25T00:00:00', 'title': '3dRPC: a web server for 3D RNA-protein structure prediction', 'abstract': None, 'year': 2018, 'publication_date': '', 'doi': '10.1093/bioinformatics/btx742', 'pmid': '29186336', 'url': 'https://www.semanticscholar.org/paper/30a4bbabb3bd08fe995f10d7495c5d7052bf56eb', 'source': 'semantic_scholar', 'authors': [], 'topic_name': 'RNA-Protein Interactions', 'domain': 'biophysics'}
+2026-08-25 14:21:17,150 [journal_club.analyzer] INFO: Loading LLM client (cache miss): base_/home/nike/models/qwen3.6-35b-a3b
+2026-08-25 14:21:17,150 [journal_club.analyzer] INFO: Using external llama-server at: http://localhost:8080
+2026-08-25 14:23:18,180 [journal_club.analyzer] INFO: Analysis complete for paper: 3dRPC: a web server for 3D RNA-protein structure prediction
+2026-08-25 14:23:18,181 [journal_club.analyzer] INFO: Completed analysis for: 3dRPC: a web server for 3D RNA-protein structure p
+2026-08-25 14:23:58,885 [journal_club.analyzer] INFO: Analysis complete for paper: A pair-conformation-dependent scoring function for evaluating 3D RNA-protein complex structures
+2026-08-25 14:23:58,885 [journal_club.analyzer] INFO: Completed analysis for: A pair-conformation-dependent scoring function for
+2026-08-25 14:24:32,214 [journal_club.analyzer] INFO: Analysis complete for paper: Structure of the zinc-finger antiviral protein in complex with RNA reveals a mechanism for selective targeting of CG-rich viral sequences
+2026-08-25 14:24:32,214 [journal_club.analyzer] INFO: Completed analysis for: Structure of the zinc-finger antiviral protein in 
+2026-08-25 14:24:54,643 [journal_club.analyzer] INFO: Analysis complete for paper: Bioinformatics Tools and Benchmarks for Computational Docking and 3D Structure Prediction of RNA-Protein Complexes
+2026-08-25 14:24:54,643 [journal_club.analyzer] INFO: Completed analysis for: Bioinformatics Tools and Benchmarks for Computatio
+2026-08-25 14:24:54,643 [journal_club.analyzer] INFO: Parallel batch analysis complete: 4/4 papers processed
+2026-08-25 14:24:54,651 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 49
+2026-08-25 14:24:54,655 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 49
+2026-08-25 14:24:54,660 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 49
+2026-08-25 14:24:54,664 [journal_club.memory.stats] INFO: Successfully saved memory: /home/nike/git/journal_club/cache/journal_club_memory.json, papers: 49
+Total papers in memory: 49
+Analyzing 4 papers for topic: RNA-Protein Interactions
+No unanalyzed papers for topic: Viral Capsid Assembly
+No unanalyzed papers for topic: General Ingest
+Analysis complete!
+
+Step 4: Generating reports...
+=== Journal Club Pipeline ===
+FAISS Index: ./cache/faiss_index
+Time Window: 12 months
+Web Port: 5000
+Memory Path: cache/journal_club_memory.json
+
+Generating reports...
+Generated 4 reports
+
+Step 5: Final statistics...
+Journal Club Memory Summary (49 papers)
+--------------------------------------------
+  Total papers: 49
+  Topics: 3
+  Domains: 3
+
+Topics:
+  - General Ingest (25 papers)
+  - RNA-Protein Interactions (14 papers)
+  - Viral Capsid Assembly (10 papers)
+
+Domains:
+  - general (25 papers)
+  - biophysics (14 papers)
+  - virology (10 papers)
+
+Analyzed papers: 49/49
+
+Step 6: Starting web server & API on http://localhost:5000...
+Web server running with PID 18021 (Access http://localhost:5000/api/stats)
+
+=== Test Run Complete ===
+Finished at: Tue 25 Aug 14:24:56 BST 2026
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/training_data_collector.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/training_data_collector.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/training_data_collector.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/training_data_collector.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/training_data_collector.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/training_data_collector.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/scripts/build_faiss_index.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/scripts/build_faiss_index.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/scripts/build_faiss_index.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/training/convert_journal_club_dataset.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/training/convert_journal_club_dataset.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/training/convert_journal_club_dataset.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/training/convert_journal_club_dataset.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/training_trigger.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/web/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/paper_analyzer.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/test_llm.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/train_lora.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/train_lora.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180
+ * Detected change in '/home/nike/git/journal_club/core/train_lora.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 648-920-180

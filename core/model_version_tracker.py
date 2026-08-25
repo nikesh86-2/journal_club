@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-log = logging.getLogger("virtual_lab.training")
+log = logging.getLogger("journal_club.training")
 
 VERSIONS_DIR = Path("training/merged_model_versions")
 ACTIVE_MODEL_FILE = Path("training/active_model.json")

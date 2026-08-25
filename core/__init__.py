@@ -37,7 +37,6 @@ from .training_data_collector import (
 )
 from .training_trigger import (
     check_and_trigger_training,
-    run_training_pipeline,
 )
 
 __all__ = [
@@ -64,6 +63,6 @@ __all__ = [
     "generate_all_reports",
     "TrainingDataCollector",
     "collect_training_data_from_memory",
-    "check_and_trigger_training",
-    "run_training_pipeline",
+    "check_and_trigger_training"
 ]
+

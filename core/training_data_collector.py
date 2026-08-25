@@ -295,10 +295,95 @@ class TrainingDataCollector:
         
         return example
     
+    def generate_qa_pairs_for_paper(
+        self,
+        paper: Dict[str, Any],
+        num_pairs: int = 3,
+        llm_client=None,
+    ) -> List[tuple[str, str]]:
+        """Generate QA pairs for a paper using LLM."""
+        
+        title = paper.get("title", "")
+        abstract = paper.get("abstract", "")
+        summary = _clean_text(paper.get("summary", ""))
+        
+        if not title or not abstract:
+            return []
+        
+        if llm_client is None:
+            try:
+                from .paper_analyzer import get_llm_client
+                llm_client = get_llm_client()
+            except Exception as e:
+                log.warning("Failed to get LLM client for QA generation: %s", e)
+                return []
+        
+        if llm_client is None:
+            return []
+        
+        prompt = f"""Generate {num_pairs} relevant question-answer pairs about this research paper.
+
+Paper:
+Title: {title}
+Abstract: {abstract}
+Summary: {summary}
+
+For each pair:
+- Question should be about the research question, methods, findings, or implications
+- Answer should be based on the paper content
+- Format each as: Q: [question] A: [answer]
+
+Output format:
+Q: [question 1]
+A: [answer 1]
+Q: [question 2]
+A: [answer 2]
+...
+"""
+        
+        try:
+            from langchain_core.messages import HumanMessage, SystemMessage
+            
+            messages = [
+                SystemMessage(content="You are an expert at generating relevant questions and answers about scientific research papers."),
+                HumanMessage(content=prompt),
+            ]
+            
+            response = llm_client.invoke(messages)
+            from .paper_analyzer import _get_response_text
+            qa_text = _get_response_text(response)
+            
+            # Parse QA pairs
+            qa_pairs = []
+            lines = qa_text.split('\n')
+            current_q = None
+            current_a = []
+            
+            for line in lines:
+                line = line.strip()
+                if line.startswith('Q:'):
+                    if current_q and current_a:
+                        qa_pairs.append((current_q, ' '.join(current_a)))
+                    current_q = line[2:].strip()
+                    current_a = []
+                elif line.startswith('A:') and current_q:
+                    current_a.append(line[2:].strip())
+            
+            # Add last pair
+            if current_q and current_a:
+                qa_pairs.append((current_q, ' '.join(current_a)))
+            
+            return qa_pairs[:num_pairs]
+            
+        except Exception as e:
+            log.warning("QA generation failed for paper %s: %s", title[:50], e)
+            return []
+    
     def collect_all(
         self,
         paper: Dict[str, Any],
         recommendations: Dict[str, List[Dict[str, Any]]] | None = None,
+        llm_client=None,
     ) -> List[Dict[str, Any]]:
         """Collect all training examples for a paper."""
         
@@ -330,6 +415,13 @@ class TrainingDataCollector:
             if ex:
                 examples.append(ex)
         
+        # Generate and collect QA pairs
+        qa_pairs = self.generate_qa_pairs_for_paper(paper, num_pairs=3, llm_client=llm_client)
+        for question, answer in qa_pairs:
+            ex = self.collect_qa_pair(paper, question, answer)
+            if ex:
+                examples.append(ex)
+        
         log.info("Collected %d training examples for paper: %s", len(examples), paper.get("title", "")[:50])
         
         return examples
@@ -338,6 +430,7 @@ class TrainingDataCollector:
         self,
         papers: List[Dict[str, Any]],
         recommendations_map: Dict[str, Dict[str, List[Dict[str, Any]]]] | None = None,
+        llm_client=None,
     ) -> int:
         """Collect training examples for a batch of papers."""
         
@@ -347,7 +440,7 @@ class TrainingDataCollector:
             paper_key = paper.get("doi") or paper.get("title")
             recommendations = recommendations_map.get(paper_key) if recommendations_map else None
             
-            examples = self.collect_all(paper, recommendations)
+            examples = self.collect_all(paper, recommendations=recommendations, llm_client=llm_client)
             total_examples += len(examples)
         
         log.info("Collected %d total training examples from %d papers", total_examples, len(papers))
@@ -363,6 +456,7 @@ def collect_training_data_from_memory(
     """Collect training data from literature memory."""
     
     from .literature_memory import JournalClubMemory
+    from .recommendation_engine import batch_recommendations, get_llm_client
     
     memory = JournalClubMemory(memory_path)
     stats = memory.get_statistics()
@@ -384,7 +478,17 @@ def collect_training_data_from_memory(
         if not high_quality_papers:
             continue
         
-        examples = collector.collect_batch(high_quality_papers)
+        # Generate recommendations for all papers
+        log.info("Generating recommendations for %d papers in topic: %s", len(high_quality_papers), topic)
+        try:
+            llm_client = get_llm_client()
+            recommendations_map = batch_recommendations(high_quality_papers, llm_client=llm_client)
+        except Exception as e:
+            log.warning("Failed to generate recommendations: %s", e)
+            recommendations_map = {}
+            llm_client = None
+        
+        examples = collector.collect_batch(high_quality_papers, recommendations_map=recommendations_map, llm_client=llm_client)
         total_examples += examples
     
     return total_examples
