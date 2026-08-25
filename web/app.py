@@ -234,7 +234,7 @@ def api_config_sources():
         "available_search_apis": [
             {"id": "europe_pmc", "name": "Europe PMC (Preprints)", "status": "Active / Primary", "supported": True},
             {"id": "biorxiv", "name": "BioRxiv / MedRxiv Direct", "status": "Integrated via Europe PMC", "supported": True},
-            {"id": "semantic_scholar", "name": "Semantic Scholar API", "status": "Available (VLAB2 Link)", "supported": True},
+            {"id": "semantic_scholar", "name": "Semantic Scholar API", "status": "Available", "supported": True},
             {"id": "ncbi_entrez", "name": "NCBI PubMed / Entrez", "status": "Available", "supported": True},
         ],
         "llm_server_url": os.getenv("JOURNAL_CLUB_LLAMA_SERVER_URL", "http://localhost:8080"),

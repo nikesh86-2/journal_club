@@ -21,7 +21,6 @@ The training trigger monitors the literature memory and automatically triggers L
 
 ### Paths
 
-- `VLAB2_PATH`: Path to VLAB2 directory (default: `../VLAB2`)
 - `TRAINING_DATA_DIR`: Training data directory (default: `training/journal_club_data`)
 - `HF_DATASET_PATH`: HuggingFace dataset directory (default: `training/journal_club_hf_dataset`)
 - `OUTPUT_MODEL_PATH`: LoRA adapter output (default: `training/journal_club_output`)
@@ -96,22 +95,21 @@ if success:
     print("Dataset converted")
 ```
 
-### `trigger_vlab2_training()`
+### `trigger_training()`
 
-Trigger VLAB2's training pipeline.
+Trigger the training pipeline.
 
 **Returns:**
 - `True` if successful, `False` otherwise
 
 **Behavior:**
-- Checks if VLAB2 exists
-- Runs VLAB2's `train_lora.py` with journal club config
+- Runs local `train_lora.py` with journal club config
 - Uses journal club training config
 - Logs result
 
 **Example:**
 ```python
-success = trigger_vlab2_training()
+success = trigger_training()
 if success:
     print("Training completed")
 ```
@@ -124,7 +122,7 @@ Merge LoRA adapter weights into base model.
 - `True` if successful, `False` otherwise
 
 **Behavior:**
-- Runs VLAB2's `merge_lora.py`
+- Runs local merge script
 - Merges adapter from `OUTPUT_MODEL_PATH`
 - Saves merged model to `MERGED_MODEL_PATH`
 - Logs result
@@ -167,7 +165,7 @@ Run the complete training pipeline.
 1. Check training threshold
 2. Collect training data
 3. Convert to HuggingFace dataset
-4. Trigger VLAB2 training
+4. Trigger training
 5. Merge LoRA weights
 6. Mark papers as trained
 
@@ -232,14 +230,14 @@ if triggered:
 │     ├─ Create train/test split (90/10)                      │
 │     └─ Save to disk                                         │
 │                                                              │
-│  4. Trigger VLAB2 Training                                  │
-│     ├─ Run VLAB2's train_lora.py                           │
+│  4. Trigger Training                                       │
+│     ├─ Run local train_lora.py                             │
 │     ├─ Use journal club training config                     │
 │     ├─ Train LoRA adapter                                   │
 │     └─ Save adapter to OUTPUT_MODEL_PATH                    │
 │                                                              │
 │  5. Merge LoRA Weights                                      │
-│     ├─ Run VLAB2's merge_lora.py                            │
+│     ├─ Run local merge script                               │
 │     ├─ Merge adapter into base model                        │
 │     └─ Save to MERGED_MODEL_PATH                            │
 │                                                              │
@@ -274,7 +272,7 @@ triggered = check_and_trigger_training()
 from core.training_trigger import (
     collect_training_data,
     convert_to_hf_dataset,
-    trigger_vlab2_training,
+    trigger_training,
     merge_lora_weights
 )
 
@@ -287,7 +285,7 @@ count = collect_training_data(memory)
 convert_to_hf_dataset()
 
 # Step 3: Train
-trigger_vlab2_training()
+trigger_training()
 
 # Step 4: Merge
 merge_lora_weights()
@@ -311,15 +309,6 @@ memory.memory["training_version"] = 1
 memory.memory["last_training_date"] = "2026-07-22T12:00:00Z"
 ```
 
-## Integration with VLAB2
-
-The training trigger integrates with VLAB2's training infrastructure:
-
-| Component | VLAB2 Component | Purpose |
-|-----------|---------------|---------|
-| Training | `train_lora.py` | LoRA fine-tuning |
-| Merging | `merge_lora.py` | Model merging |
-| Config | `training_config.yaml` | Training hyperparameters |
 
 ## Performance Considerations
 
@@ -365,14 +354,13 @@ Track:
 - Check output directory permissions
 
 ### Training fails
-- Check VLAB2 directory exists
-- Verify VLAB2 training scripts exist
+- Check training scripts exist
 - Check training config file
 - Verify GPU availability
 
 ### Merge fails
 - Check adapter exists
-- Verify VLAB2 merge script exists
+- Verify merge script exists
 - Check output directory permissions
 - Verify disk space
 

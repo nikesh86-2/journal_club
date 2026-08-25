@@ -63,6 +63,15 @@ def test_literature_memory():
     print("✓ Literature Memory tests passed")
     return memory
 
+def test_training_imports():
+    try:
+        import core.train_lora
+        import core.merge_lora
+        return True
+    except ImportError as e:
+        print(f"Import error: {e}")
+        return False
+
 
 def test_paper_analysis():
     """Test paper analysis components."""

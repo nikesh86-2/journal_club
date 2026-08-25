@@ -21,25 +21,12 @@ from typing import Any, Dict, List
 
 import yaml
 
-# Try to import from VLAB2
-try:
-    import sys
-    vlab2_path = Path(__file__).parents[2] / "VLAB2"
-    if vlab2_path.exists():
-        # Add the PARENT of VLAB2 so that 'VLAB2' is importable as a namespace package
-        sys.path.insert(0, str(vlab2_path.parent))
-
-    from VLAB2.research.research_agent_adaptive import (
-        CachedSentenceTransformerEmbeddings,
-        cached_semantic_search,
-    )
-    from langchain_community.vectorstores import FAISS
-    from langchain_core.documents import Document
-except ImportError:
-    CachedSentenceTransformerEmbeddings = None
-    cached_semantic_search = None
-    FAISS = None
-    Document = None
+from .research_agent_adaptive import (
+    CachedSentenceTransformerEmbeddings,
+    cached_semantic_search,
+)
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
 
 log = logging.getLogger("journal_club.recommendations")
 

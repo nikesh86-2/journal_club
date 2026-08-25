@@ -20,7 +20,7 @@ if [ -f .env ]; then
 fi
 
 # Set defaults
-export JOURNAL_CLUB_FAISS_INDEX_PATH="${JOURNAL_CLUB_FAISS_INDEX_PATH:-/scratch/fbsnpat/bot/VLAB2/cache/faiss_index}"
+export JOURNAL_CLUB_FAISS_INDEX_PATH="${JOURNAL_CLUB_FAISS_INDEX_PATH:-cache/faiss_index}"
 export JOURNAL_CLUB_TIME_WINDOW_MONTHS="${JOURNAL_CLUB_TIME_WINDOW_MONTHS:-12}"
 export JOURNAL_CLUB_WEB_PORT="${JOURNAL_CLUB_WEB_PORT:-5000}"
 export JOURNAL_CLUB_LITERATURE_MEMORY_PATH="${JOURNAL_CLUB_LITERATURE_MEMORY_PATH:-cache/journal_club_memory.json}"
@@ -43,12 +43,6 @@ if [ -z "$DEPENDENCIES_CHECKED" ]; then
         pip install -r requirements.txt
     }
     export DEPENDENCIES_CHECKED=1
-fi
-
-# Add VLAB2's PARENT to path so 'VLAB2' is importable as a namespace package
-if [ -d "../VLAB2" ]; then
-    VLAB2_PARENT="$(cd ../VLAB2 && cd .. && pwd)"
-    export PYTHONPATH="$PYTHONPATH:$VLAB2_PARENT"
 fi
 
 # Function to start streaming (foreground, runs for a configurable number of cycles)

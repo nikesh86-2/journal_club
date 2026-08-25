@@ -1,8 +1,7 @@
 # Journal Club LoRA Fine-Tuning Configuration
-# Adapted from VLAB2's training config for literature domain
 
-# Base model (same as VLAB2)
-model_name: /scratch/fbsnpat/bot/VLAB2/hf_cache/hub/models--Qwen--Qwen2.5-32B-Instruct/snapshots/5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd
+# Base model
+model_name: /home/nike/models/qwen3.6-35b-a3b/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf
 
 # Output directories
 output_dir: training/journal_club_output

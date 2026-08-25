@@ -128,7 +128,6 @@ If no command is specified, runs `all`:
 The script automatically:
 - Loads environment variables from `.env`
 - Sets defaults for missing variables
-- Adds VLAB2 to Python path if it exists
 - Checks and installs dependencies
 
 #### Functions
