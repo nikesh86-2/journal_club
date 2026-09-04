@@ -1,26 +1,29 @@
 # Journal Club LoRA Fine-Tuning Configuration
 
 # Base model
-model_name: /home/nike/models/qwen3.5-35b-a3b-gptq
+model_name: /home/nike/models/qwen3.6-35b-a3b
+
+# Student model for fine-tuning (smaller model to fit in VRAM)
+student_model_name: /home/nike/models/qwen3-4B
 
 # Output directories
 output_dir: training/journal_club_output
 hf_dataset_path: training/journal_club_hf_dataset
 
 # Sequence length
-max_length: 4096
+max_length: 512  # Reduced for quick test
 
 # Training parameters
 training:
   batch_size: 1
-  gradient_accumulation_steps: 8
-  epochs: 4  # Increased for better convergence with small dataset
-  learning_rate: 1.5e-5  # Slightly lower for stability
-  warmup_steps: 100
-  save_steps: 50
-  logging_steps: 5
+  gradient_accumulation_steps: 4
+  epochs: 1  # Quick test with 1 epoch
+  learning_rate: 0.00002
+  warmup_steps: 10
+  save_steps: 20
+  logging_steps: 2
   eval_strategy: "steps"
-  eval_steps: 25
+  eval_steps: 10
   save_best_model: true
   metric_for_best_model: "eval_loss"
   bf16: true

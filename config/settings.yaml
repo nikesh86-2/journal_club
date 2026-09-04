@@ -32,8 +32,9 @@ training:
   min_papers_threshold: 200
   auto_trigger: true
   min_quality_score: 0.5
-  model_path: /home/nike/models/qwen3.5-35b-a3b-gptq
+  model_path: /home/nike/models/qwen3.6-35b-a3b
   output_dir: training/journal_club_output
+  student_model_path: /home/nike/models/qwen3-4B
 
 # Fine-tuned model usage
 model:

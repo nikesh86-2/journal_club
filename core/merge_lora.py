@@ -61,9 +61,13 @@ def merge_lora_adapter() -> None:
 
     # Load configuration
     config = load_config()
-    base_model_name = config["model_name"]
+    # Use student model if configured, otherwise use base model
+    base_model_name = config.get("student_model_name", config["model_name"])
+    is_student_model = "student_model_name" in config
 
     log.info(f"Base model: {base_model_name}")
+    if is_student_model:
+        log.info("Merging into student model (smaller model for VRAM efficiency)")
     log.info(f"LoRA adapter: {LORA_PATH}")
     log.info(f"Output directory: {MERGED_OUTPUT_DIR}")
 

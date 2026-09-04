@@ -1,6 +1,6 @@
 from llama_cpp import Llama
 
-model_path = "/home/nike/models/qwen3.5-35b-a3b-gptq"
+model_path = "/home/nike/models/qwen3.6-35b-a3b"
 print("Loading model...")
 llm = Llama(
     model_path=model_path,

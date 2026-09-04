@@ -56,6 +56,8 @@ mistral-7b/
 training/checkpoints/
 training/runs/
 training/wandb/
+training/journal_club_output/
+training/journal_club_hf_dataset/hf_disk/*.arrow
 
 # Large files that shouldn't be in git
 *.faiss

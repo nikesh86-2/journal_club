@@ -35,11 +35,10 @@ from transformers import (
     TrainingArguments,
 )
 
-from gptqmodel import BACKEND
 log = logging.getLogger("journal_club.training")
 
 CONFIG_PATH = Path("training/journal_club_training_config.yaml")
-HF_DATASET_PATH = Path("training/journal_club_hf_dataset")
+HF_DATASET_PATH = Path("training/journal_club_hf_dataset/hf_disk")
 OUTPUT_DIR = Path("training/journal_club_output")
 LOGS_DIR = Path("training/logs")
 
@@ -74,10 +73,14 @@ def setup_logging() -> None:
 # Model
 # ---------------------------------------------------------------------------
 def load_model_and_tokenizer(config: dict):
-    """Load an existing GPTQ-quantized model for LoRA/QLoRA training."""
-    model_name = config["model_name"]
+    """Load model for LoRA/QLoRA training with 4-bit quantization."""
+    # Use student model if configured, otherwise use base model
+    model_name = config.get("student_model_name", config["model_name"])
+    is_student_model = "student_model_name" in config
 
     log.info(f"Loading model: {model_name}")
+    if is_student_model:
+        log.info("Using student model for training (smaller model for VRAM efficiency)")
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
@@ -88,19 +91,21 @@ def load_model_and_tokenizer(config: dict):
         tokenizer.pad_token = tokenizer.eos_token
         log.info("Set pad_token to eos_token")
 
-    # IMPORTANT:
-    # The model is already GPTQ quantized. Do NOT pass a
-    # BitsAndBytesConfig here.
-    log.info("Loading existing GPTQ model...")
-
+    # Use 4-bit quantization via bitsandbytes for VRAM efficiency
+    log.info("Loading model with 4-bit quantization...")
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+    )
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         device_map="auto",
-        dtype=torch.bfloat16,
+        quantization_config=bnb_config,
         trust_remote_code=True,
-        backend=BACKEND.AUTO_TRAINABLE,
     )
-    
+
     return model, tokenizer
 
 # ---------------------------------------------------------------------------
@@ -350,8 +355,6 @@ def main():
         # -----------------------------------------------------------
         # Logging / saving
         # -----------------------------------------------------------
-
-        logging_dir=str(LOGS_DIR),
 
         report_to="none",
 

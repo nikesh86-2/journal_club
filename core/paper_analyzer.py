@@ -58,12 +58,12 @@ FINETUNED_MODEL_PATH = os.getenv(
 )
 LOCAL_BASE_MODEL_PATH = os.getenv(
     "JOURNAL_CLUB_LOCAL_BASE_MODEL_PATH",
-    "/home/nike/models/qwen3.5-35b-a3b-gptq" # Path to a downloaded base model (e.g., Llama-3.1-8B or Mistral-7B)
+    "/home/nike/models/qwen3.6-35b-a3b" # Path to a downloaded base model (e.g., Llama-3.1-8B or Mistral-7B)
 )
 # GGUF model path for llama-cpp-python
 GGUF_MODEL_PATH = os.getenv(
     "JOURNAL_CLUB_GGUF_MODEL_PATH",
-    "/home/nike/models/qwen3.5-35b-a3b-gptq"
+    "/home/nike/models/qwen3.6-35b-a3b"
 )
 # External llama-server endpoint
 LLAMA_SERVER_URL = os.getenv("JOURNAL_CLUB_LLAMA_SERVER_URL", "http://localhost:8080")
