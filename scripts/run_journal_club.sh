@@ -81,8 +81,8 @@ memory = JournalClubMemory()
 started = start_all_topics(memory)
 print(f'Started {started} topic streams')
 
-cycles = int(os.environ.get('JOURNAL_CLUB_STREAM_CYCLES', '$cycles'))
-interval = int(os.environ.get('JOURNAL_CLUB_STREAM_INTERVAL', '$interval'))
+cycles = int(os.environ.get('JOURNAL_CLUB_STREAM_CYCLES', '3'))
+interval = int(os.environ.get('JOURNAL_CLUB_STREAM_INTERVAL', '30'))
 
 # Keep the process alive so daemon threads can fetch papers
 # Per-topic workers log their own cycle counts accurately
