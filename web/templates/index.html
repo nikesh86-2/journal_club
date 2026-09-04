@@ -744,7 +744,7 @@
                 name: name,
                 domain: domain,
                 description: `Research on ${name}`,
-                time_window_months: parseInt(document.getElementById("cfg-time-window").value) || 12,
+                time_window_months: parseInt(document.getElementById("cfg-time-window").value) || 240,
                 seed_queries: queriesRaw ? queriesRaw.split(",").map(s => s.trim()).filter(Boolean) : [name],
                 domain_terms: {
                     target_classes: targetsRaw ? targetsRaw.split(",").map(s => s.trim()).filter(Boolean) : [],

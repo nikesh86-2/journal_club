@@ -43,7 +43,7 @@ topics:
   - name: "RNA-Protein Interactions"
     domain: "biophysics"
     description: "Recent advances in RNA-protein binding mechanisms"
-    time_window_months: 12
+    time_window_months: 240
     seed_queries:
       - "RNA protein binding interface"
       - "RNA-protein complex structure"

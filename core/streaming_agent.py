@@ -74,7 +74,7 @@ STREAM_MAX_IDLE = int(os.getenv("JOURNAL_CLUB_STREAM_MAX_IDLE", "0"))
 STREAM_MAX_CYCLES = int(os.getenv("JOURNAL_CLUB_STREAM_MAX_CYCLES", "0"))
 DEDUP_ABSTRACT_PREFIX_LEN = int(os.getenv("JOURNAL_CLUB_DEDUP_ABSTRACT_PREFIX_LEN", "500"))
 
-DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "12"))
+DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "240"))
 
 # ---------------------------------------------------------------------------
 # Hard-reject terms — papers matching any of these are never relevant
@@ -408,7 +408,7 @@ def append_to_faiss(docs: List) -> int:
 # Streaming worker
 # ---------------------------------------------------------------------------
 
-def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int = 12) -> List[dict]:
+def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int = 240) -> List[dict]:
     """Fetch papers from Europe PMC using full-text search.
 
     Europe PMC indexes bioRxiv/medRxiv preprints and supports proper Boolean

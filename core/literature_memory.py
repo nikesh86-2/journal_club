@@ -228,7 +228,7 @@ class JournalClubMemory:
         paper: dict | Any,
         topic_name: str | None = None,
         domain: str | None = None,
-        time_window_months: int = 12,
+        time_window_months: int = 240,
     ) -> dict | None:
         """
         Ingest a paper into memory with its metadata.

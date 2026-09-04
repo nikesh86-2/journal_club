@@ -253,7 +253,7 @@ def api_config_sources():
         "llm_server_url": os.getenv("JOURNAL_CLUB_LLAMA_SERVER_URL", "http://localhost:8080"),
         "llm_temperature": settings.get("llm_temperature", float(os.getenv("JOURNAL_CLUB_LLM_TEMPERATURE", 0.3))),
         "llm_max_tokens": settings.get("llm_max_tokens", int(os.getenv("JOURNAL_CLUB_LLM_MAX_TOKENS", 2000))),
-        "time_window_months": settings.get("default_time_window_months", int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", 12))),
+        "time_window_months": settings.get("default_time_window_months", int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", 240))),
         "stream_batch_size": settings.get("stream_batch_size", int(os.getenv("JOURNAL_CLUB_STREAM_BATCH_SIZE", 20))),
     }
     return jsonify(response_data)
@@ -393,7 +393,7 @@ def api_ingest():
     payload = request.get_json() or {}
     topic_name = payload.get("topic_name")
     custom_query = payload.get("query")
-    time_window = int(payload.get("time_window_months", 12))
+    time_window = int(payload.get("time_window_months", 240))
     limit = int(payload.get("limit", 20))
 
     if not topic_name and not custom_query:

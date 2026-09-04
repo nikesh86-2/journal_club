@@ -58,7 +58,7 @@ topics:
 - name: Plastic degrading enzymes
   domain: general
   description: Research on Plastic degrading enzymes
-  time_window_months: 60
+  time_window_months: 240
   seed_queries:
   - Plastic degrading enzymes
   domain_terms:
