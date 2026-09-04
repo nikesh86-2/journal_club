@@ -11,19 +11,19 @@ output_dir: training/journal_club_output
 hf_dataset_path: training/journal_club_hf_dataset
 
 # Sequence length
-max_length: 512  # Reduced for quick test
+max_length: 2048  # Increased for proper training
 
 # Training parameters
 training:
   batch_size: 1
   gradient_accumulation_steps: 4
-  epochs: 1  # Quick test with 1 epoch
+  epochs: 3  # Full training with 3 epochs
   learning_rate: 0.00002
-  warmup_steps: 10
-  save_steps: 20
-  logging_steps: 2
+  warmup_steps: 100
+  save_steps: 500
+  logging_steps: 50
   eval_strategy: "steps"
-  eval_steps: 10
+  eval_steps: 250
   save_best_model: true
   metric_for_best_model: "eval_loss"
   bf16: true
@@ -32,9 +32,9 @@ training:
 
 # LoRA configuration
 lora:
-  r: 16  # Rank of update matrices
-  alpha: 32  # Scaling factor
-  dropout: 0.1  # Higher dropout for literature domain
+  r: 32  # Increased rank for better adaptation
+  alpha: 64  # Increased scaling factor
+  dropout: 0.05  # Moderate dropout for literature domain
   target_modules:
     - q_proj
     - k_proj

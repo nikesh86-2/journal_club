@@ -14,17 +14,17 @@ MERGED_MODEL_PATH = Path("training/journal_club_merged_model")
 def check_training_threshold(memory):
     """Check if training threshold is met."""
     lora_train = os.getenv("JOURNAL_CLUB_LORA_TRAIN", "0").strip() == "1"
-    min_train_papers = int(os.getenv("JOURNAL_CLUB_MIN_TRAIN_PAPERS", "20"))
-    
+    min_train_papers = int(os.getenv("JOURNAL_CLUB_MIN_TRAIN_PAPERS", "200"))
+
     if not lora_train:
         log.info("Training disabled (JOURNAL_CLUB_LORA_TRAIN=0)")
         return False
-    
+
     total_papers = len(memory.memory.get("papers", []))
     if total_papers < min_train_papers:
         log.info(f"Training threshold not met: {total_papers} < {min_train_papers}")
         return False
-    
+
     log.info(f"Training threshold met: {total_papers} >= {min_train_papers}")
     return True
 

@@ -467,8 +467,8 @@ def collect_training_data_from_memory(
     
     # Collect papers by topic
     for topic in stats["by_topic"].keys():
-        papers = memory.filter_papers(topic=topic, limit=1000)
-        
+        papers = memory.filter_papers(topic=topic, limit=5000)
+
         # Filter by quality score if available
         high_quality_papers = [
             p for p in papers
