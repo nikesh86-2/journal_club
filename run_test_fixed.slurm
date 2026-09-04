@@ -70,7 +70,7 @@ PYTHON_SCRIPT
 # Step 2: Run streaming (more cycles for more papers)
 echo ""
 echo "Step 2: Running streaming (5 cycles for more papers)..."
-JC_STREAM_CYCLES=5 JC_STREAM_INTERVAL=60 bash scripts/run_journal_club.sh streaming
+JOURNAL_CLUB_STREAM_CYCLES=5 JOURNAL_CLUB_STREAM_INTERVAL=60 bash scripts/run_journal_club.sh streaming
 
 # Step 3: Run analysis
 echo ""

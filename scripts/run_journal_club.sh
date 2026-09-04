@@ -34,6 +34,9 @@ export JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE="${JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE:
 export JOURNAL_CLUB_FORCE_CPU_OFFLOAD="${JOURNAL_CLUB_FORCE_CPU_OFFLOAD:-0}"
 export JOURNAL_CLUB_USE_LLAMA_SERVER="${JOURNAL_CLUB_USE_LLAMA_SERVER:-1}"
 export JOURNAL_CLUB_LLAMA_SERVER_URL="${JOURNAL_CLUB_LLAMA_SERVER_URL:-http://localhost:8080}"
+export JOURNAL_CLUB_STREAM_INTERVAL="${JOURNAL_CLUB_STREAM_INTERVAL:-30}"
+export JOURNAL_CLUB_STREAM_BATCH_SIZE="${JOURNAL_CLUB_STREAM_BATCH_SIZE:-20}"
+export JOURNAL_CLUB_STREAM_CYCLES="${JOURNAL_CLUB_STREAM_CYCLES:-3}"
 # Prevent redundant dependency checks across pipeline stages
 export DEPENDENCIES_CHECKED=1
 
@@ -78,8 +81,8 @@ memory = JournalClubMemory()
 started = start_all_topics(memory)
 print(f'Started {started} topic streams')
 
-cycles = int(os.environ.get('JC_STREAM_CYCLES', '$cycles'))
-interval = int(os.environ.get('JC_STREAM_INTERVAL', '$interval'))
+cycles = int(os.environ.get('JOURNAL_CLUB_STREAM_CYCLES', '$cycles'))
+interval = int(os.environ.get('JOURNAL_CLUB_STREAM_INTERVAL', '$interval'))
 
 # Keep the process alive so daemon threads can fetch papers
 # Per-topic workers log their own cycle counts accurately

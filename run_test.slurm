@@ -51,7 +51,7 @@ print(f'Stats: {memory.get_statistics()}')
 # Step 2: Run streaming (1 cycle only)
 echo ""
 echo "Step 2: Running streaming (1 cycle)..."
-JC_STREAM_CYCLES=1 JC_STREAM_INTERVAL=30 bash scripts/run_journal_club.sh streaming
+JOURNAL_CLUB_STREAM_CYCLES=1 JOURNAL_CLUB_STREAM_INTERVAL=30 bash scripts/run_journal_club.sh streaming
 
 # Step 3: Run analysis
 echo ""
