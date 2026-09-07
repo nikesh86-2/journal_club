@@ -68,7 +68,7 @@ STREAM_MAX_IDLE = int(os.getenv("JOURNAL_CLUB_STREAM_MAX_IDLE", "0"))
 STREAM_MAX_CYCLES = int(os.getenv("JOURNAL_CLUB_STREAM_MAX_CYCLES", "0"))
 DEDUP_ABSTRACT_PREFIX_LEN = int(os.getenv("JOURNAL_CLUB_DEDUP_ABSTRACT_PREFIX_LEN", "500"))
 
-DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "240"))
+DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "0"))
 
 # ---------------------------------------------------------------------------
 # Hard-reject terms — papers matching any of these are never relevant

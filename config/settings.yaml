@@ -1,7 +1,7 @@
 # Journal Club Settings
 
 # Time window for recent papers (in months)
-default_time_window_months: 240
+default_time_window_months: 0
 
 # Streaming settings
 stream_interval_seconds: 30

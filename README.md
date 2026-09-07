@@ -43,7 +43,7 @@ topics:
   - name: "RNA-Protein Interactions"
     domain: "biophysics"
     description: "Recent advances in RNA-protein binding mechanisms"
-    time_window_months: 240
+    time_window_months: 0
     seed_queries:
       - "RNA protein binding interface"
       - "RNA-protein complex structure"
@@ -72,7 +72,7 @@ ENTREZ_EMAIL=your_email@example.com
 
 # Journal club specific
 JOURNAL_CLUB_FAISS_INDEX_PATH=./cache/faiss_index
-JOURNAL_CLUB_TIME_WINDOW_MONTHS=12  # Set to 0 or negative for unlimited historical ingestion
+JOURNAL_CLUB_TIME_WINDOW_MONTHS=0  # Set to 0 or negative for unlimited historical ingestion
 JOURNAL_CLUB_MAX_MEMORY_PAPERS=1000  # Max unique papers stored in memory before quality-aware trimming
 JOURNAL_CLUB_WEB_PORT=5000
 JOURNAL_CLUB_LLM_MODEL=gpt-4
