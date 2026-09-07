@@ -579,12 +579,18 @@ def stream_papers(
 
                 for query in queries:
                     since_date = None
+                    s2_gated = False
                     if use_bookmark:
                         bookmark_key = f"bookmark:{topic_name}:{query}"
                         since_date = memory.get_bookmark(bookmark_key)
+                        # Once the Europe PMC bookmark exists (initial
+                        # backfill is done), gate Semantic Scholar: it has
+                        # no date cursor and would otherwise re-fetch the
+                        # same candidates (and can time out) every cycle.
+                        s2_gated = since_date is not None
 
                     papers = []
-                    if cached_semantic_search is not None:
+                    if not s2_gated and cached_semantic_search is not None:
                         try:
                             papers = cached_semantic_search(query, limit=batch_size)
                         except TypeError:
