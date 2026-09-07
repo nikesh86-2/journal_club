@@ -1,6 +1,15 @@
+"""Quick smoke test of llama-cpp-python with a GGUF model.
+
+Set JOURNAL_CLUB_GGUF_MODEL_PATH before running.
+"""
+import os
+
 from llama_cpp import Llama
 
-model_path = "/home/nike/models/qwen3.6-35b-a3b"
+model_path = os.getenv("JOURNAL_CLUB_GGUF_MODEL_PATH")
+if not model_path:
+    raise SystemExit("Set JOURNAL_CLUB_GGUF_MODEL_PATH to a GGUF model file first.")
+
 print("Loading model...")
 llm = Llama(
     model_path=model_path,

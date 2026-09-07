@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from pathlib import Path
 
 from flask import Flask, render_template, jsonify, send_file
@@ -31,10 +32,22 @@ app = Flask(__name__)
 MEMORY_PATH = os.getenv("JOURNAL_CLUB_LITERATURE_MEMORY_PATH")
 OUTPUT_DIR = Path(__file__).parents[1] / "output" / "markdown"
 
+TOPIC_PAGE_SIZE = 50
+
+# One shared memory instance for the whole server (SQLite handles
+# concurrent access; re-constructing per request used to re-load the
+# entire JSON file on every request).
+_memory_lock = threading.Lock()
+_memory_instance = None
+
 
 def get_memory():
-    """Get or create memory instance."""
-    return JournalClubMemory(MEMORY_PATH)
+    """Get the shared memory instance (created lazily, once)."""
+    global _memory_instance
+    with _memory_lock:
+        if _memory_instance is None:
+            _memory_instance = JournalClubMemory(MEMORY_PATH)
+        return _memory_instance
 
 
 # ---------------------------------------------------------------------------
@@ -52,15 +65,27 @@ def index():
 
 @app.route("/topic/<topic_name>")
 def topic_detail(topic_name):
-    """Topic detail view with papers."""
+    """Topic detail view with papers (paginated)."""
+    from flask import request
     memory = get_memory()
-    papers = memory.filter_papers(topic=topic_name, limit=100)
-    
+    total = len(memory.filter_papers(topic=topic_name))
+
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except ValueError:
+        page = 1
+    offset = (page - 1) * TOPIC_PAGE_SIZE
+
+    papers = memory.filter_papers(topic=topic_name, limit=TOPIC_PAGE_SIZE, offset=offset)
+    total_pages = max(1, (total + TOPIC_PAGE_SIZE - 1) // TOPIC_PAGE_SIZE)
+
     return render_template(
         "topic_view.html",
         topic_name=topic_name,
         papers=papers,
-        paper_count=len(papers),
+        paper_count=total,
+        page=page,
+        total_pages=total_pages,
     )
 
 
@@ -100,16 +125,54 @@ def api_papers_all():
     topic = request.args.get("topic")
     domain = request.args.get("domain")
     limit = request.args.get("limit", 100, type=int)
-    papers = memory.filter_papers(topic=topic, domain=domain, limit=limit)
+    offset = request.args.get("offset", 0, type=int)
+    papers = memory.filter_papers(topic=topic, domain=domain, limit=limit, offset=offset)
     return jsonify(papers)
 
 
 @app.route("/api/papers/<topic_name>")
 def api_papers(topic_name):
     """API endpoint for papers by topic."""
+    from flask import request
     memory = get_memory()
-    papers = memory.filter_papers(topic=topic_name, limit=100)
+    limit = request.args.get("limit", 100, type=int)
+    offset = request.args.get("offset", 0, type=int)
+    papers = memory.filter_papers(topic=topic_name, limit=limit, offset=offset)
     return jsonify(papers)
+
+
+@app.route("/api/search")
+def api_search():
+    """Semantic paper search using the local FAISS index."""
+    from flask import request
+    query = (request.args.get("q") or "").strip()
+    if not query:
+        return jsonify({"error": "q parameter is required"}), 400
+
+    limit = max(1, min(request.args.get("limit", 10, type=int), 50))
+
+    try:
+        from core.research_agent_adaptive import search_local_db
+        docs = search_local_db(query)
+    except Exception as e:
+        log.warning("FAISS search failed: %s", e)
+        return jsonify({"error": "Semantic search unavailable", "results": []}), 503
+
+    results = []
+    for doc in docs[:limit]:
+        if doc is None:
+            continue
+        metadata = doc.metadata or {}
+        results.append({
+            "title": metadata.get("title", ""),
+            "doi": metadata.get("doi", ""),
+            "year": metadata.get("year", ""),
+            "topic": metadata.get("topic", ""),
+            "domain": metadata.get("domain", ""),
+            "source": metadata.get("source", "faiss"),
+            "abstract": (doc.page_content or "")[:500],
+        })
+    return jsonify({"query": query, "results": results})
 
 
 @app.route("/api/paper/<path:paper_key>")
@@ -133,23 +196,22 @@ def api_trigger_analysis():
         for topic in stats['by_topic'].keys():
             papers = memory.filter_papers(topic=topic, limit=20)
             unanalyzed = [p for p in papers if not p.get('summary')]
-            if unanalyzed:
-                topic_conf = get_topic_config_by_name(topic)
-                topic_domain = topic_conf.get("domain", "general") if topic_conf else "general"
-                results = analyze_batch(unanalyzed, topic_domain)
-                for result in results:
-                    if result.get('analysis'):
-                        paper = result['paper']
-                        analysis = result['analysis']
-                        key = paper.get('doi') or paper.get('title')
-                        memory.update_paper_analysis(
-                            key,
-                            summary=analysis.get('summary'),
-                            critique=analysis.get('critique'),
-                            gap_analysis=analysis.get('gap_analysis'),
-                            quality_scores=analysis.get('quality_scores'),
-                        )
-                        analyzed_count += 1
+            if not unanalyzed:
+                continue
+            topic_conf = get_topic_config_by_name(topic)
+            topic_domain = topic_conf.get("domain", "general") if topic_conf else "general"
+            # analyze_batch returns one analysis dict per input paper, in order
+            results = analyze_batch(unanalyzed, topic_domain, memory=memory)
+            for paper, result in zip(unanalyzed, results):
+                key = paper.get('doi') or paper.get('pmid') or paper.get('title')
+                memory.update_paper_analysis(
+                    key,
+                    summary=result.get('summary'),
+                    critique=result.get('critique'),
+                    gap_analysis=result.get('gap_analysis'),
+                    quality_scores=result.get('quality_scores'),
+                )
+                analyzed_count += 1
         return jsonify({"status": "success", "analyzed_papers": analyzed_count})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -388,7 +450,7 @@ def api_config_domains():
 def api_ingest():
     """Trigger on-demand literature ingestion for a selected topic or custom query."""
     from flask import request
-    from core.streaming_agent import fetch_europepmc_papers, is_domain_relevant, _is_within_time_window, _paper_key
+    from core.streaming_agent import fetch_europepmc_papers, is_domain_relevant, _is_within_time_window
 
     payload = request.get_json() or {}
     topic_name = payload.get("topic_name")
@@ -409,14 +471,13 @@ def api_ingest():
     total_candidates = 0
 
     for q in queries:
-        candidates = fetch_europepmc_papers(q, limit=limit, time_window_months=time_window)
+        candidates = fetch_europepmc_papers(str(q), limit=limit, time_window_months=time_window)
         total_candidates += len(candidates)
         for p in candidates:
             if not isinstance(p, dict):
                 continue
-            # Deduplication
-            pkey = _paper_key(p)
-            if memory.get_paper_by_key(pkey) or (p.get("doi") and memory.get_paper_by_key(p["doi"])):
+            # Deduplication against existing memory
+            if memory.paper_exists(p):
                 continue
 
             # Filtering

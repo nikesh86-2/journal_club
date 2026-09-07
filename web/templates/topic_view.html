@@ -132,6 +132,17 @@
             padding: 40px;
             color: #666;
         }
+        .pagination {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+        .pagination .page-info {
+            color: #555;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -200,6 +211,18 @@
             </div>
             {% endfor %}
         </div>
+
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a class="btn btn-secondary" href="/topic/{{ topic_name }}?page={{ page - 1 }}">← Previous</a>
+            {% endif %}
+            <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %}
+            <a class="btn" href="/topic/{{ topic_name }}?page={{ page + 1 }}">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
         {% else %}
         <div class="no-papers">
             <h2>No papers found for this topic yet</h2>

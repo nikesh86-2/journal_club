@@ -30,6 +30,9 @@ ENV/
 *.err
 *.out
 
+# Test run logs
+*.log
+
 # Cache and data directories
 cache/
 output/
@@ -38,6 +41,17 @@ results/
 
 # Literature memory (user data)
 literature_memory.json
+*.db
+*.db-wal
+*.db-shm
+*.lock
+*.migrated
+
+# Generated training artifacts
+training/journal_club_hf_dataset/
+training/merged_model_versions/
+training/active_model.json
+training/journal_club_merged_model*
 
 # Model weights and offload directories
 hf_offload/

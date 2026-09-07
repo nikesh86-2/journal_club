@@ -15,8 +15,9 @@ from typing import Optional
 
 log = logging.getLogger("journal_club.training")
 
-VERSIONS_DIR = Path("training/merged_model_versions")
-ACTIVE_MODEL_FILE = Path("training/active_model.json")
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+VERSIONS_DIR = _REPO_ROOT / "training" / "merged_model_versions"
+ACTIVE_MODEL_FILE = _REPO_ROOT / "training" / "active_model.json"
 
 
 def setup_versioning() -> None:

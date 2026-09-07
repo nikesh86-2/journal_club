@@ -1,6 +1,7 @@
 import subprocess
 import os
 import logging
+from datetime import datetime
 from pathlib import Path
 
 log = logging.getLogger("journal_club.training_trigger")
@@ -20,7 +21,7 @@ def check_training_threshold(memory):
         log.info("Training disabled (JOURNAL_CLUB_LORA_TRAIN=0)")
         return False
 
-    total_papers = len(memory.memory.get("papers", []))
+    total_papers = memory.get_statistics().get("total_papers", 0)
     if total_papers < min_train_papers:
         log.info(f"Training threshold not met: {total_papers} < {min_train_papers}")
         return False
@@ -88,9 +89,9 @@ def merge_lora_weights():
 
 def mark_papers_as_trained(memory):
     """Mark papers as trained in memory."""
-    training_version = memory.memory.get("training_version", 0) + 1
-    memory.memory["training_version"] = training_version
-    memory.memory["last_training_date"] = "2026-08-25T00:00:00Z"
+    training_version = int(memory.get_metadata("training_version", 0) or 0) + 1
+    memory.set_metadata("training_version", training_version)
+    memory.set_metadata("last_training_date", datetime.utcnow().isoformat() + "Z")
     memory.save()
     log.info(f"Marked papers as trained (version {training_version})")
 

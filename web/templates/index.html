@@ -447,6 +447,23 @@
         <!-- Global Alert Message -->
         <div id="global-alert" class="alert-box"></div>
 
+        <!-- Semantic Paper Search (FAISS) -->
+        <section class="section-card">
+            <div class="section-header">
+                <div class="section-title">
+                    <span>🔍 Semantic Paper Search</span>
+                    <span class="stage-pill">Local FAISS index</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="semantic-search-input" class="form-control"
+                       style="flex: 1; min-width: 260px;"
+                       placeholder="Search ingested papers semantically (e.g. capsid assembly RNA binding)...">
+                <button class="btn btn-primary btn-sm" id="btn-semantic-search" onclick="runSemanticSearch()">Search</button>
+            </div>
+            <div id="semantic-search-results" style="margin-top: 14px;"></div>
+        </section>
+
         <!-- ================================================================= -->
         <!-- STAGE 1: API & DATA SOURCE CONFIGURATION (PLACED BEFORE TOPICS)    -->
         <!-- ================================================================= -->
@@ -821,6 +838,50 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = "Fetch & Ingest Literature";
+            }
+        }
+
+        async function runSemanticSearch() {
+            const input = document.getElementById("semantic-search-input");
+            const resultsBox = document.getElementById("semantic-search-results");
+            const query = input.value.trim();
+            if (!query) {
+                alert("Please enter a search query.");
+                return;
+            }
+            const btn = document.getElementById("btn-semantic-search");
+            btn.disabled = true;
+            btn.textContent = "Searching...";
+            resultsBox.innerHTML = `<p style="color: var(--text-secondary); font-size: 13px;">Searching FAISS index...</p>`;
+
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=10`);
+                const data = await res.json();
+                if (!res.ok) {
+                    resultsBox.innerHTML = `<p style="color: var(--danger); font-size: 13px;">${data.error || "Search failed"}</p>`;
+                    return;
+                }
+                const results = data.results || [];
+                if (!results.length) {
+                    resultsBox.innerHTML = `<p style="color: var(--text-secondary); font-size: 13px;">No matching papers found. Build the index with: python scripts/build_faiss_index.py</p>`;
+                    return;
+                }
+                resultsBox.innerHTML = results.map(r => `
+                    <div style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="font-weight: 600; font-size: 14px;">
+                            ${r.doi ? `<a href="/paper/${encodeURIComponent(r.doi)}" style="color: var(--accent-primary); text-decoration: none;">${r.title}</a>` : r.title}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin: 4px 0;">
+                            ${r.year || ""} ${r.topic ? "· " + r.topic : ""} ${r.doi ? "· DOI: " + r.doi : ""}
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-primary);">${(r.abstract || "").slice(0, 300)}</div>
+                    </div>
+                `).join("");
+            } catch (e) {
+                resultsBox.innerHTML = `<p style="color: var(--danger); font-size: 13px;">Search error: ${e.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Search";
             }
         }
 

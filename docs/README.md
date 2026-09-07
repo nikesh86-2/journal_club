@@ -1,135 +1,57 @@
-# Journal Club Pipeline Documentation
+# Journal Club Documentation
 
-This directory contains comprehensive documentation for the Journal Club pipeline.
+Documentation for the Journal Club literature-analysis pipeline. This set
+reflects the current codebase (SQLite memory, consolidated streaming,
+LLM rubric scoring, and the closed training loop).
 
-## Documentation Index
+## Index
 
-### Architecture & Overview
-- **[overview.md](overview.md)** - System architecture, data flow, component hierarchy, design principles, technology stack, and integration with VLAB2
+| Document | Covers |
+|----------|--------|
+| [overview.md](overview.md) | Architecture, data flow, component hierarchy |
+| [configuration.md](configuration.md) | Environment variables, YAML configs, path defaults |
+| [memory.md](memory.md) | SQLite memory backend (schema, queries, migration) |
+| [pipeline.md](pipeline.md) | Streaming, analysis, recommendations, reports |
+| [training.md](training.md) | Training data collection, QLoRA training, merging, evaluation |
+| [web.md](web.md) | Flask web interface and API reference |
+| [scripts.md](scripts.md) | Execution scripts and SLURM jobs |
+| [workflow.md](workflow.md) | End-to-end workflows with concrete commands |
 
-### Core Modules
-- **[core_literature_memory.md](core_literature_memory.md)** - Persistent storage for papers, analysis results, and recommendations
-- **[core_streaming_agent.md](core_streaming_agent.md)** - Literature ingestion with domain filtering and time-based filtering
-- **[core_paper_analyzer.md](core_paper_analyzer.md)** - Gap analysis, quality scoring, and critique generation
-- **[core_recommendation_engine.md](core_recommendation_engine.md)** - Foundational/conflicting paper detection and related reading recommendations
-- **[core_report_generator.md](core_report_generator.md)** - Markdown report generation for topics and papers
-- **[core_training_data_collector.md](core_training_data_collector.md)** - Training data collection for LoRA fine-tuning
-- **[core_training_trigger.md](core_training_trigger.md)** - Training orchestration and threshold monitoring
+## Quick start
 
-### Web Interface
-- **[web_app.md](web_app.md)** - Flask web application with dashboard, topic views, and API endpoints
+1. Copy `.env.example` to `.env` and fill in API keys and model paths.
+2. Configure topics in `config/topics.yaml` and domains in `config/domains.yaml`.
+3. Backfill citation counts for existing papers (one-off):
+   ```bash
+   python scripts/backfill_citations.py
+   ```
+4. Run the pipeline:
+   ```bash
+   ./scripts/run_journal_club.sh streaming     # ingest papers
+   ./scripts/run_journal_club.sh analysis      # LLM analysis
+   ./scripts/run_journal_club.sh reports       # markdown/JSON reports
+   ./scripts/run_journal_club.sh web           # web interface
+   ```
 
-### Configuration
-- **[config.md](config.md)** - YAML configuration files (topics, domains, settings) and environment variables
-
-### Scripts
-- **[scripts.md](scripts.md)** - Setup and execution scripts for the pipeline
-
-### Optimization
-- **[optimizations.md](optimizations.md)** - Performance optimization recommendations, critical issues, and implementation priorities
-
-## Quick Start
-
-1. **Read the [overview.md](overview.md)** to understand the system architecture
-2. **Configure the pipeline** using [config.md](config.md) as a guide
-3. **Run setup** using instructions in [scripts.md](scripts.md)
-4. **Start the pipeline** using `./scripts/run_journal_club.sh all`
-
-## Component Relationships
+## Component map
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Configuration Layer                     │
-│                    (config.md)                               │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       Core Layer                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ Literature   │  │ Streaming    │  │ Paper        │     │
-│  │ Memory       │  │ Agent        │  │ Analyzer     │     │
-│  │ (literature  │  │ (streaming   │  │ (paper_      │     │
-│  │  _memory.md) │  │  _agent.md)  │  │  analyzer.md)│     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ Recommend-   │  │ Report       │  │ Training     │     │
-│  │ ation       │  │ Generator    │  │ Data         │     │
-│  │ (recommend-  │  │ (report_     │  │ Collector    │     │
-│  │  _engine.md) │  │  generator.md)│  │ (training_   │     │
-│  └──────────────┘  └──────────────┘  │  data_       │     │
-│  ┌──────────────┐                      │  collector.md)│     │
-│  │ Training     │                      └──────────────┘     │
-│  │ Trigger      │                      ┌──────────────┐     │
-│  │ (training_   │                      │ Training     │     │
-│  │  _trigger.md)│                      │ Trigger      │     │
-│  └──────────────┘                      │ (training_   │     │
-│                                         │  _trigger.md)│     │
-│                                         └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Presentation Layer                       │
-│                    (web_app.md)                               │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Execution Layer                          │
-│                      (scripts.md)                             │
-└─────────────────────────────────────────────────────────────┘
+config/            topics.yaml, domains.yaml, settings.yaml
+core/
+  config.py               path defaults + ${ENV} resolution
+  literature_memory.py    SQLite storage (WAL, migration from legacy JSON)
+  streaming_agent.py      literature ingestion (Europe PMC + Semantic Scholar)
+  research_agent_adaptive.py  semantic search, embeddings, citation backfill
+  paper_analyzer.py       LLM clients, summary/gaps/critique, rubric scoring
+  recommendation_engine.py  foundational/conflicting/related papers
+  report_generator.py     markdown reports
+  training_data_collector.py  JSONL training examples
+  training_trigger.py     threshold check + pipeline orchestration
+  train_lora.py           QLoRA fine-tuning
+  merge_lora.py           adapter merge + version registration
+  eval_model.py           base-vs-merged model evaluation
+  model_version_tracker.py  model versioning / rollback
+web/app.py                Flask app + REST API
+scripts/                  run/analysis/worker/FAISS/backfill scripts + SLURM
+training/                 training config, dataset converter, artifacts
 ```
-
-## Documentation Conventions
-
-### Code Blocks
-- **Python code**: Uses syntax highlighting for Python
-- **Bash commands**: Uses syntax highlighting for bash
-- **YAML**: Uses syntax highlighting for YAML
-- **JSON**: Uses syntax highlighting for JSON
-
-### Parameter Tables
-Parameters are documented in tables with:
-- **Field**: Parameter name
-- **Type**: Data type
-- **Required**: Whether the parameter is required
-- **Description**: What the parameter does
-
-### Example Sections
-Each module includes:
-- Basic usage examples
-- Advanced usage patterns
-- Common use cases
-- Integration examples
-
-### Error Handling
-Each module documents:
-- Common errors
-- Error handling strategies
-- Troubleshooting steps
-
-## Contributing to Documentation
-
-When adding new features or modifying existing ones:
-
-1. Update the relevant module documentation
-2. Add examples for new functionality
-3. Update the architecture overview if components change
-4. Update configuration documentation if new settings are added
-5. Update script documentation if new commands are added
-
-## Additional Resources
-
-- **Main README**: `../README.md` - Project overview and quick start
-- **Requirements**: `../requirements.txt` - Python dependencies
-- **Environment Example**: `../.env.example` - Environment variable template
-- **Training Config**: `../training/journal_club_training_config.yaml` - LoRA training configuration
-
-## Support
-
-For issues or questions:
-1. Check the relevant module documentation
-2. Review the troubleshooting sections
-3. Check the configuration documentation
-4. Review the script documentation

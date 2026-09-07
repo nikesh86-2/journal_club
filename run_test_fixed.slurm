@@ -36,34 +36,17 @@ sys.path.insert(0, '.')
 from core.literature_memory import JournalClubMemory
 
 memory = JournalClubMemory()
-print(f'Before cleanup: {len(memory.memory["papers"])} papers')
+papers = memory.get_all_papers()
+print(f'Before cleanup: {len(papers)} papers')
 
 # Count unique DOIs
-unique_dois = set()
-for p in memory.memory["papers"]:
-    doi = p.get('doi', '')
-    if doi:
-        unique_dois.add(doi.lower().replace(' ', ''))
-
+unique_dois = {p.get('doi', '').lower().replace(' ', '') for p in papers if p.get('doi')}
 print(f'Unique DOIs: {len(unique_dois)}')
 print(f'Stats: {memory.get_statistics()}')
 
-# Remove duplicates
-seen_dois = set()
-unique_papers = []
-for paper in memory.memory["papers"]:
-    doi = paper.get('doi', '').lower().replace(' ', '')
-    if doi and doi not in seen_dois:
-        seen_dois.add(doi)
-        unique_papers.append(paper)
-    elif not doi:
-        # Papers without DOI - keep them all for now
-        unique_papers.append(paper)
-
-print(f'After cleanup: {len(unique_papers)} papers')
-memory.memory["papers"] = unique_papers
-memory.update_statistics()
-memory.save()
+# Remove duplicates (merges analyses into the kept copy)
+removed = memory.deduplicate_papers()
+print(f'Removed {removed} duplicates')
 print('Cleanup complete!')
 PYTHON_SCRIPT
 
@@ -94,8 +77,9 @@ memory = JournalClubMemory()
 print(memory.summary())
 
 # Count analyzed papers
-analyzed = sum(1 for p in memory.memory["papers"] if p.get('summary'))
-print(f'\nAnalyzed papers: {analyzed}/{len(memory.memory["papers"])}')
+papers = memory.get_all_papers()
+analyzed = sum(1 for p in papers if p.get('summary'))
+print(f'\nAnalyzed papers: {analyzed}/{len(papers)}')
 PYTHON_SCRIPT
 
 echo ""

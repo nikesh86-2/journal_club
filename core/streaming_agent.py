@@ -30,6 +30,7 @@ from typing import Dict, List, Set
 
 import yaml
 
+from . import config
 from .research_agent_adaptive import (
     CachedSentenceTransformerEmbeddings,
     cached_semantic_search,
@@ -59,14 +60,7 @@ _lock = threading.RLock()
 # Config
 # ---------------------------------------------------------------------------
 
-DEFAULT_FAISS_INDEX_PATH = str(
-    Path(__file__).parents[1] / "cache" / "faiss_index"
-)
-
-FAISS_INDEX_PATH = os.getenv(
-    "JOURNAL_CLUB_FAISS_INDEX_PATH",
-    DEFAULT_FAISS_INDEX_PATH
-)
+FAISS_INDEX_PATH = config.DEFAULT_FAISS_INDEX_PATH
 
 STREAM_INTERVAL = int(os.getenv("JOURNAL_CLUB_STREAM_INTERVAL", "30"))
 STREAM_BATCH_SIZE = int(os.getenv("JOURNAL_CLUB_STREAM_BATCH_SIZE", "20"))
@@ -78,7 +72,6 @@ DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "2
 
 # ---------------------------------------------------------------------------
 # Hard-reject terms — papers matching any of these are never relevant
-# (Ported from VLAB2 streaming_literature_agent.BAD_TERMS)
 # ---------------------------------------------------------------------------
 
 BAD_TERMS = [
@@ -414,12 +407,17 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
     Europe PMC indexes bioRxiv/medRxiv preprints and supports proper Boolean
     search, unlike the bioRxiv /details/ endpoint which only returns
     chronological listings without search capability.
+
+    Results are sorted by first publication date (newest first). When the
+    time window is unlimited (<= 0), the request pages through results so
+    older literature is not missed (capped at 500 results).
     """
     import urllib.request
     import urllib.parse
     import json
 
     results = []
+    max_pages = 5
     try:
         # Build date filter
         if time_window_months > 0:
@@ -431,20 +429,27 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
         # SRC:PPR filters to preprints (bioRxiv, medRxiv, etc.)
         search_query = f"({query}){date_filter} AND SRC:PPR"
 
-        params = urllib.parse.urlencode({
-            "query": search_query,
-            "format": "json",
-            "pageSize": str(min(limit, 100)),
-            "resultType": "core",
-            "sort": "CITED desc",
-        })
-        url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/search?{params}"
+        page = 1
+        while len(results) < limit and page <= max_pages:
+            params = urllib.parse.urlencode({
+                "query": search_query,
+                "format": "json",
+                "pageSize": str(min(limit - len(results), 100)),
+                "resultType": "core",
+                "sort": "FIRST_PDATE desc",
+                "page": str(page),
+            })
+            url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/search?{params}"
 
-        req = urllib.request.Request(url, headers={"User-Agent": "JournalClubPipeline/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            req = urllib.request.Request(url, headers={"User-Agent": "JournalClubPipeline/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
 
-            for item in data.get("resultList", {}).get("result", []):
+            items = data.get("resultList", {}).get("result", [])
+            if not items:
+                break
+
+            for item in items:
                 title = item.get("title", "")
                 abstract = item.get("abstractText", "")
                 doi = item.get("doi", "")
@@ -466,17 +471,21 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
                     "pmid": item.get("pmid", ""),
                     "url": f"https://doi.org/{doi}" if doi else "",
                     "authors": authors,
+                    "citation_count": item.get("citedByCount") or 0,
                 })
 
                 if len(results) >= limit:
                     break
+
+            page += 1
 
     except Exception as e:
         log.warning("Europe PMC search failed for query '%s': %s", query, e)
 
     return results
 
-def ingest_into_analysis(memory, paperwork, key, stop_event, topic_name, time_window_months):
+def ingest_into_analysis(memory, paperwork):
+    """Compute summary/gap analysis/quality scores and persist them to memory."""
     def compute_summary_local(paperwork):
         from .paper_analyzer import generate_summary
         return generate_summary(paperwork)
@@ -490,25 +499,25 @@ def ingest_into_analysis(memory, paperwork, key, stop_event, topic_name, time_wi
         try:
             return score_paper_quality(paperwork, gaps)
         except Exception as e:
-            log.warning(f"Error computing quality scores for {key}: {e}")
+            log.warning(f"Error computing quality scores for %s: %s", paperwork.get("title", "Unknown"), e)
             return {}
 
     try:
         summary = compute_summary_local(paperwork)
-        domain = paperwork.get("domain", "general")
         gaps = compute_gaps_local(paperwork)
         quality_scores = compute_quality_scores(paperwork, gaps)
 
-        record = {
-            "summary": summary,
-            "critique": "Not computed yet",
-            "gap_analysis": gaps,
-            "quality_scores": quality_scores
-        }
+        # update_paper_analysis matches raw doi/pmid/title fields — do NOT
+        # pass the normalized _paper_key() here or the lookup silently fails.
+        paper_key = (
+            paperwork.get("doi")
+            or paperwork.get("pmid")
+            or paperwork.get("title", "")
+        )
 
         # Update orig memory instance
         memory.update_paper_analysis(
-            key,
+            paper_key,
             summary=summary,
             gap_analysis=gaps,
             quality_scores=quality_scores
@@ -540,6 +549,9 @@ def stream_papers(
 
     topic_config = get_topic_config(topic_name)
     topic_terms = topic_config.get("domain_terms", {}) if topic_config else {}
+
+    # Deduplicate anything left over from earlier runs before ingesting new papers
+    memory.deduplicate_papers()
 
     log.info("Streaming worker active for topic: %s (domain: %s)", topic_name, domain)
 
@@ -578,6 +590,10 @@ def stream_papers(
                         if pkey in _stream_cache:
                             continue
 
+                        # Skip papers already stored in memory (survives restarts)
+                        if memory.paper_exists(p):
+                            continue
+
                         # Time filtering
                         if not _is_within_time_window(p, time_window_months):
                             continue
@@ -597,14 +613,7 @@ def stream_papers(
                         )
 
                         # Analyze paper inline (blocking call)
-                        ingest_into_analysis(
-                            memory,
-                            p,
-                            pkey,
-                            stop_event,
-                            topic_name,
-                            time_window_months
-                        )
+                        ingest_into_analysis(memory, p)
 
                         if record:
                             _stream_cache.add(pkey)
@@ -673,7 +682,10 @@ def stream_papers(
             stop_event.wait(interval)
 
     except KeyboardInterrupt:
-        log.info(f"KeyboardInterrupt caught; ensuring memory saved before stopping stream. Current record: {len(memory.get_statistics().get('papers', []))}")
+        log.info(
+            "KeyboardInterrupt caught; ensuring memory saved before stopping stream. Current papers: %d",
+            memory.get_statistics().get('total_papers', 0),
+        )
         memory.save()
 
 

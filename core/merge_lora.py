@@ -10,8 +10,10 @@ Usage:
 from __future__ import annotations
 
 import logging
+import json
 import os
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -20,18 +22,24 @@ import yaml
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+# Ensure repo root is on sys.path so `from core...` works when this file is
+# run directly (e.g. `python core/merge_lora.py`).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core.model_version_tracker import (ModelVersionTracker, JournalClubVersion)
-
+from core.model_version_tracker import (
+    register_model_version,
+    set_active_model,
+    cleanup_old_versions,
+)
 
 
 log = logging.getLogger("journal_club.training")
 
-
-CONFIG_PATH = 'training/journal_club_training_config.yaml'
-LORA_PATH = 'training/journal_club_output'
-MERGED_OUTPUT_DIR = 'training/journal_club_merged_model'
-LOGS_DIR = Path("training/logs")
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+CONFIG_PATH = _REPO_ROOT / "training" / "journal_club_training_config.yaml"
+LORA_PATH = _REPO_ROOT / "training" / "journal_club_output"
+MERGED_OUTPUT_DIR = _REPO_ROOT / "training" / "journal_club_merged_model"
+LOGS_DIR = _REPO_ROOT / "training" / "logs"
 
 
 def setup_logging() -> None:
@@ -48,9 +56,10 @@ def setup_logging() -> None:
 
 
 def load_config() -> dict:
-    """Load training configuration from YAML file."""
+    """Load training configuration from YAML file (resolving ${ENV} placeholders)."""
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        from core.config import resolve_env
+        return resolve_env(yaml.safe_load(f))
 
 
 def merge_lora_adapter() -> None:
@@ -99,9 +108,11 @@ def merge_lora_adapter() -> None:
     log.info("Merging LoRA adapter into base model...")
     merged_model = model.merge_and_unload()
 
-    # Prepare output directory with timestamp
+    # Save the merged model to a timestamped directory OUTSIDE the default
+    # path, then promote it to the default path. Keeping the versioned copy
+    # separate avoids deleting it when swapping the default directory.
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    versioned_output = MERGED_OUTPUT_DIR / f"version_{timestamp}"
+    versioned_output = MERGED_OUTPUT_DIR.parent / f"{MERGED_OUTPUT_DIR.name}.v{timestamp}"
     versioned_output.mkdir(parents=True, exist_ok=True)
 
     # Save merged model
@@ -141,6 +152,35 @@ def merge_lora_adapter() -> None:
             "merged_at": datetime.now().isoformat(),
         },
     )
+
+    # ------------------------------------------------------------------
+    # Optional: evaluate the merged model against the base model on
+    # held-out papers before activating it.
+    # ------------------------------------------------------------------
+    if os.getenv("JOURNAL_CLUB_EVAL_BEFORE_ACTIVATE", "0") == "1":
+        from core.eval_model import evaluate_models
+
+        num_papers = int(os.getenv("JOURNAL_CLUB_EVAL_PAPERS", "8"))
+        judge_url = os.getenv("JOURNAL_CLUB_LLAMA_SERVER_URL", "http://localhost:8080")
+        log.info(
+            "Evaluating merged model vs base model on %d held-out papers",
+            num_papers,
+        )
+        report = evaluate_models(
+            base_model_name,
+            str(MERGED_OUTPUT_DIR),
+            papers=num_papers,
+            judge_url=judge_url,
+        )
+        log.info("Evaluation report:\n%s", json.dumps(report, indent=2))
+        if not report.get("merged_better", True):
+            log.error(
+                "Merged model did not meet the evaluation bar — registered "
+                "as version %s but NOT activated",
+                version_id,
+            )
+            return str(versioned_output)
+        log.info("Merged model passed evaluation — activating")
 
     # Set as active model
     set_active_model(str(MERGED_OUTPUT_DIR), version_id)

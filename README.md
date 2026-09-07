@@ -6,7 +6,7 @@ A literature analysis pipeline for journal club discussions that ingests recent 
 
 - **Continuous Literature Ingestion**: Streams recent papers (configurable time window, default 12 months) using semantic search
 - **Gap Analysis**: Identifies methodology gaps, missing controls, statistical issues, and reproducibility concerns
-- **Quality Scoring**: Rates papers on methodology rigor, statistical power, and reproducibility
+- **Quality Scoring**: Rates papers on methodology rigor, statistical power, and reproducibility (LLM rubric scoring with deterministic fallback)
 - **Recommendations**: Suggests foundational papers, conflicting papers, and related reading
 - **Configurable Domains**: Support for multiple research domains via YAML configuration
 - **Web Interface**: Flask-based web interface for browsing papers and analysis
@@ -66,6 +66,7 @@ domains:
 ### Environment Variables (.env)
 ```bash
 # personal details
+# Journal club specific
 S2_API_KEY=your_semantic_scholar_api_key
 ENTREZ_EMAIL=your_email@example.com
 
@@ -75,7 +76,14 @@ JOURNAL_CLUB_TIME_WINDOW_MONTHS=12  # Set to 0 or negative for unlimited histori
 JOURNAL_CLUB_MAX_MEMORY_PAPERS=1000  # Max unique papers stored in memory before quality-aware trimming
 JOURNAL_CLUB_WEB_PORT=5000
 JOURNAL_CLUB_LLM_MODEL=gpt-4
-JOURNAL_CLUB_LITERATURE_MEMORY_PATH=literature_memory.json
+JOURNAL_CLUB_LITERATURE_MEMORY_PATH=cache/journal_club_memory.db
+
+# Embeddings (used for FAISS indexing and semantic search)
+JOURNAL_CLUB_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+JOURNAL_CLUB_EMBEDDING_DEVICE=auto
+
+# LLM-based quality scoring (fallback to rule-based scoring when disabled or unavailable)
+JOURNAL_CLUB_LLM_SCORING=1
 
 # LoRA fine-tuning settings
 JOURNAL_CLUB_LORA_TRAIN=0
@@ -84,6 +92,10 @@ JOURNAL_CLUB_MIN_QUALITY_SCORE=0.5
 JOURNAL_CLUB_USE_FINETUNED=0
 JOURNAL_CLUB_FINETUNED_MODEL_PATH=training/journal_club_merged_model
 JOURNAL_CLUB_FALLBACK_TO_BASE=1
+
+# Evaluate the merged model vs the base model on held-out papers before activating it
+JOURNAL_CLUB_EVAL_BEFORE_ACTIVATE=0
+JOURNAL_CLUB_EVAL_PAPERS=8
 ```
 
 ## Usage
@@ -141,6 +153,16 @@ This will:
 ./scripts/run_journal_club.sh all-with-training
 ```
 
+**Backfill citation counts for existing papers:**
+```bash
+python scripts/backfill_citations.py
+```
+
+**Compare base vs merged model on held-out papers:**
+```bash
+python core/eval_model.py --base /path/to/base_model --merged training/journal_club_merged_model --papers 10
+```
+
 ### Python API
 
 ```python
@@ -163,8 +185,9 @@ Access the web interface at `http://localhost:5000` (or configured port).
 
 Features:
 - **Dashboard**: Overview of all topics and statistics
-- **Topic View**: Browse papers by topic with quality scores and gap analysis
+- **Topic View**: Browse papers by topic with quality scores and gap analysis (paginated, 50/page)
 - **Paper Detail**: Full paper information, summary, critique, and recommendations
+- **Semantic Search**: Search ingested papers via the local FAISS index (`GET /api/search?q=...`)
 - **Export**: Download markdown reports and JSON exports
 
 ## Output
@@ -180,11 +203,16 @@ Generated in `output/json/`:
 - `{topic_name}_export.json` - Topic data with full analysis
 
 ### Literature Memory
-Persistent storage in `literature_memory.json` with:
+
+Persistent storage in a SQLite database (`cache/journal_club_memory.db` by
+default) with:
 - Paper metadata and analysis results
 - Gap analysis and quality scores
 - Recommendation relationships
 - Topic and domain tracking
+
+Legacy JSON memory files are migrated into SQLite automatically on first
+use (the JSON file is renamed with a `.migrated` suffix).
 
 ## Architecture
 
@@ -244,6 +272,13 @@ JOURNAL_CLUB_LORA_TRAIN=1
 JOURNAL_CLUB_MIN_TRAIN_PAPERS=200
 JOURNAL_CLUB_MIN_QUALITY_SCORE=0.5
 ```
+
+### Model Usage
+
+When `JOURNAL_CLUB_USE_FINETUNED=1` and the merged model exists at
+`JOURNAL_CLUB_FINETUNED_MODEL_PATH`, the fine-tuned model is loaded locally and
+**takes priority over the external llama-server** for analysis and
+recommendations. Otherwise the llama-server (or local/OpenAI fallbacks) is used.
 
 Use fine-tuned model:
 ```bash

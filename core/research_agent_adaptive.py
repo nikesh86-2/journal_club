@@ -12,13 +12,19 @@ from dotenv import load_dotenv
 
 log = logging.getLogger("journal_club.researcher")
 
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-
 load_dotenv()
 Entrez.email = os.getenv("ENTREZ_EMAIL", "journal.club@example.com")
 
 SEMANTIC_SCHOLAR_API_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
 SEMANTIC_SCHOLAR_API_KEY = os.getenv("S2_API_KEY")
+
+# Embedding configuration (env-configurable; 'auto' lets sentence-transformers
+# pick the best available device).
+EMBEDDING_MODEL = os.getenv(
+    "JOURNAL_CLUB_EMBEDDING_MODEL",
+    "sentence-transformers/all-MiniLM-L6-v2",
+)
+EMBEDDING_DEVICE = os.getenv("JOURNAL_CLUB_EMBEDDING_DEVICE", "auto")
 
 _session = requests.Session()
 
@@ -52,10 +58,8 @@ def get_embedding_model():
     if _model is None:
         from sentence_transformers import SentenceTransformer
 
-        _model = SentenceTransformer(
-            "sentence-transformers/all-MiniLM-L6-v2",
-            device="cpu",
-        )
+        device = None if EMBEDDING_DEVICE in ("auto", "", None) else EMBEDDING_DEVICE
+        _model = SentenceTransformer(EMBEDDING_MODEL, device=device)
     return _model
 
 
@@ -94,15 +98,11 @@ def rate_limited_get(url, **kwargs):
 
 
 def _faiss_index_path() -> str:
-    try:
-        from .streaming_literature_agent import get_faiss_index_path
-        return get_faiss_index_path()
-    except Exception:
-        return (
-            os.getenv("JOURNAL_CLUB_FAISS_INDEX_PATH")
-            or os.getenv("FAISS_INDEX_PATH")
-            or os.path.join(os.path.dirname(__file__), "..", "cache", "faiss_index")
-        )
+    return (
+        os.getenv("JOURNAL_CLUB_FAISS_INDEX_PATH")
+        or os.getenv("FAISS_INDEX_PATH")
+        or os.path.join(os.path.dirname(__file__), "..", "cache", "faiss_index")
+    )
 
 
 def search_local_db(query: str) -> List:
@@ -131,7 +131,7 @@ def search_semantic_scholar(query: str, limit: int = 25) -> List:
     params = {
         "query": query,
         "limit": min(limit, 100),
-        "fields": "title,abstract,year,url,externalIds",
+        "fields": "title,abstract,year,url,externalIds,citationCount,publicationDate",
     }
 
     for attempt in range(5):
@@ -164,6 +164,8 @@ def search_semantic_scholar(query: str, limit: int = 25) -> List:
                     "url": p.get("url"),
                     "doi": ext.get("DOI"),
                     "pmid": ext.get("PubMed"),
+                    "citation_count": p.get("citationCount") or 0,
+                    "publication_date": p.get("publicationDate"),
                     "source": "semantic_scholar",
                 }
                 out.append(row)
@@ -177,13 +179,54 @@ def search_semantic_scholar(query: str, limit: int = 25) -> List:
     return []
 
 
+def fetch_citation_counts_by_doi(dois: List[str], batch_size: int = 100) -> Dict[str, int]:
+    """Fetch citation counts for DOIs via the Semantic Scholar batch endpoint.
+
+    Returns a dict mapping lowercase DOI -> citation count.
+    """
+    results: Dict[str, int] = {}
+    dois = [str(d).strip() for d in dois if d]
+    if not dois:
+        return results
+
+    url = "https://api.semanticscholar.org/graph/v1/paper/batch"
+    params = {"fields": "externalIds,citationCount"}
+
+    for i in range(0, len(dois), batch_size):
+        chunk = dois[i:i + batch_size]
+        try:
+            resp = _session.post(
+                url,
+                params=params,
+                json={"ids": [f"DOI:{d}" for d in chunk]},
+                headers=headers,
+                timeout=30,
+            )
+            if resp.status_code == 429:
+                log.warning("Semantic Scholar batch rate limited, waiting")
+                time.sleep(5)
+                continue
+            resp.raise_for_status()
+            for item in resp.json() or []:
+                if not isinstance(item, dict):
+                    continue
+                doi = ((item.get("externalIds") or {}).get("DOI") or "").strip().lower()
+                if doi:
+                    results[doi] = item.get("citationCount") or 0
+        except Exception as e:
+            log.warning("Citation count batch fetch failed: %s", e)
+        time.sleep(1)
+
+    return results
+
+
 def expand_knowledge(topic: str, build_db: bool = False) -> List:
     papers = cached_semantic_search(topic, limit=25)
 
     if build_db and papers:
         try:
             from langchain_core.documents import Document
-            from .streaming_literature_agent import append_to_faiss
+            from .streaming_agent import append_to_faiss
 
             docs = []
 

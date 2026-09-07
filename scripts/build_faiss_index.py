@@ -2,8 +2,8 @@
 """
 Build FAISS index from literature memory for recommendations.
 
-This script reads papers from journal_club_memory.json and builds a FAISS
-vector index for semantic search and recommendations.
+This script reads papers from the journal club memory (SQLite) and builds
+or rebuilds a FAISS vector index for semantic search and recommendations.
 """
 
 import json
@@ -19,23 +19,23 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
 
 from core.research_agent_adaptive import CachedSentenceTransformerEmbeddings
+from core.config import DEFAULT_MEMORY_PATH
 
 log = logging.getLogger("journal_club.build_faiss")
 
-MEMORY_PATH = Path("cache/journal_club_memory.json")
+MEMORY_PATH = Path(DEFAULT_MEMORY_PATH)
 FAISS_INDEX_PATH = Path("cache/faiss_index")
 
 
 def load_papers_from_memory(memory_path: Path) -> List[dict]:
-    """Load papers from journal club memory."""
+    """Load papers from journal club memory (SQLite or legacy JSON)."""
     if not memory_path.exists():
         log.error(f"Memory file not found: {memory_path}")
         return []
-    
-    with open(memory_path) as f:
-        memory = json.load(f)
-    
-    papers = memory.get("papers", [])
+
+    from core.literature_memory import JournalClubMemory
+    memory = JournalClubMemory(str(memory_path))
+    papers = memory.get_all_papers()
     log.info(f"Loaded {len(papers)} papers from memory")
     return papers
 

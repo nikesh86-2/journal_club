@@ -40,33 +40,31 @@ def slugify(text: str) -> str:
 
 
 def load_memory(path: Path):
+    """Load papers from the memory database (or a legacy JSON file)."""
     if not path.exists():
         log.error("Memory file not found: %s", path)
         return []
     try:
-        data = json.loads(path.read_text())
-        # Support a few common structures
-        if isinstance(data, dict):
-            if "papers" in data and isinstance(data["papers"], list):
-                return data["papers"]
-            # maybe list of values
-            vals = [v for v in data.values() if isinstance(v, dict) and "title" in v]
-            if vals:
-                return vals
-        if isinstance(data, list):
-            return data
+        from core.literature_memory import JournalClubMemory
+        memory = JournalClubMemory(str(path))
+        return memory.get_all_papers()
     except Exception as e:
-        log.error("Failed to parse memory file: %s", e)
-    return []
+        log.error("Failed to load memory: %s", e)
+        return []
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--memory-file", default="cache/journal_club_memory.json")
+    parser.add_argument(
+        "--memory-file",
+        default=None,
+        help="Path to the memory database (default: JOURNAL_CLUB_LITERATURE_MEMORY_PATH or cache/journal_club_memory.db)",
+    )
     parser.add_argument("--output-dir", default="results/analysis")
     args = parser.parse_args()
 
-    mem_path = Path(args.memory_file)
+    from core.config import DEFAULT_MEMORY_PATH
+    mem_path = Path(args.memory_file) if args.memory_file else Path(DEFAULT_MEMORY_PATH)
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 

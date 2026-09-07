@@ -35,15 +35,11 @@ sys.path.insert(0, '.')
 from core.literature_memory import JournalClubMemory
 
 memory = JournalClubMemory()
-print(f'Before cleanup: {len(memory.papers)} papers')
+papers = memory.get_all_papers()
+print(f'Before cleanup: {len(papers)} papers')
 
 # Count unique DOIs
-unique_dois = set()
-for p in memory.papers:
-    doi = p.get('doi', '')
-    if doi:
-        unique_dois.add(doi.lower().replace(' ', ''))
-
+unique_dois = {p.get('doi', '').lower().replace(' ', '') for p in papers if p.get('doi')}
 print(f'Unique DOIs: {len(unique_dois)}')
 print(f'Stats: {memory.get_statistics()}')
 "

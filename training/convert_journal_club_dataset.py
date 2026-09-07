@@ -141,7 +141,18 @@ def main() -> None:
         log.info("Using locked split from %s", LOCKED_SPLIT_FILE)
         train_dois = set(locked_split.get("train_dois", []))
         test_dois = set(locked_split.get("test_dois", []))
-        
+
+        # Repair leakage: a DOI must never appear in both sets.
+        overlap = train_dois & test_dois
+        if overlap:
+            log.warning(
+                "Locked split has %d DOIs in both train and test; "
+                "assigning them to train only",
+                len(overlap),
+            )
+            test_dois -= overlap
+            save_locked_split(sorted(train_dois), sorted(test_dois))
+
         train_rows = [r for r in rows if r.get("paper_id") in train_dois]
         test_rows = [r for r in rows if r.get("paper_id") in test_dois]
         
@@ -152,18 +163,29 @@ def main() -> None:
             train_rows.extend(new_papers)
     else:
         log.info("No locked split found, creating new split")
+        # Split at the PAPER level (group rows by paper id) so one paper's
+        # examples never straddle the train/test boundary.
+        by_paper: dict = {}
+        for r in rows:
+            by_paper.setdefault(r.get("paper_id"), []).append(r)
+
+        paper_ids = list(by_paper.keys())
         # Shuffle with fixed seed for reproducibility
         random.seed(42)
-        random.shuffle(rows)
+        random.shuffle(paper_ids)
 
-        split_idx = max(1, int(len(rows) * 0.9))
-        train_rows = rows[:split_idx]
-        test_rows = rows[split_idx:] if len(rows) > 1 else rows[:1]
-        
+        split_idx = max(1, int(len(paper_ids) * 0.9))
+        train_ids = set(paper_ids[:split_idx])
+        test_ids = set(paper_ids[split_idx:]) if len(paper_ids) > 1 else set()
+        test_ids -= train_ids  # guarantee disjointness
+
+        train_rows = [r for pid in paper_ids if pid in train_ids for r in by_paper[pid]]
+        test_rows = [r for pid in paper_ids if pid in test_ids for r in by_paper[pid]]
+
         # Extract paper DOIs for locked split
-        train_dois = list(set(r.get("paper_id") for r in train_rows))
-        test_dois = list(set(r.get("paper_id") for r in test_rows))
-        
+        train_dois = sorted(train_ids)
+        test_dois = sorted(test_ids)
+
         # Save locked split
         save_locked_split(train_dois, test_dois)
 

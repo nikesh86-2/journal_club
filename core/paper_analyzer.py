@@ -18,7 +18,7 @@ import time
 import os
 import re
 import threading
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 import shutil
 import importlib
 from pathlib import Path
@@ -56,15 +56,12 @@ FINETUNED_MODEL_PATH = os.getenv(
     "JOURNAL_CLUB_FINETUNED_MODEL_PATH",
     "training/journal_club_merged_model"
 )
-LOCAL_BASE_MODEL_PATH = os.getenv(
-    "JOURNAL_CLUB_LOCAL_BASE_MODEL_PATH",
-    "/home/nike/models/qwen3.6-35b-a3b" # Path to a downloaded base model (e.g., Llama-3.1-8B or Mistral-7B)
-)
-# GGUF model path for llama-cpp-python
-GGUF_MODEL_PATH = os.getenv(
-    "JOURNAL_CLUB_GGUF_MODEL_PATH",
-    "/home/nike/models/qwen3.6-35b-a3b"
-)
+# Local base model (HuggingFace). Empty by default — set via
+# JOURNAL_CLUB_LOCAL_BASE_MODEL_PATH.
+LOCAL_BASE_MODEL_PATH = os.getenv("JOURNAL_CLUB_LOCAL_BASE_MODEL_PATH", "")
+# GGUF model path for llama-cpp-python. Empty by default — set via
+# JOURNAL_CLUB_GGUF_MODEL_PATH.
+GGUF_MODEL_PATH = os.getenv("JOURNAL_CLUB_GGUF_MODEL_PATH", "")
 # External llama-server endpoint
 LLAMA_SERVER_URL = os.getenv("JOURNAL_CLUB_LLAMA_SERVER_URL", "http://localhost:8080")
 USE_LLAMA_SERVER = os.getenv("JOURNAL_CLUB_USE_LLAMA_SERVER", "1") == "1"
@@ -73,6 +70,8 @@ FORCE_CPU_OFFLOAD = os.getenv("JOURNAL_CLUB_FORCE_CPU_OFFLOAD", "0") == "1"
 RETRY_ATTEMPTS = int(os.getenv("JOURNAL_CLUB_RETRY_ATTEMPTS", "3"))
 MAX_ANALYSIS_WORKERS = int(os.getenv("JOURNAL_CLUB_MAX_ANALYSIS_WORKERS", "4"))
 ENABLE_ANALYSIS_CACHE = os.getenv("JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE", "1") == "1"
+LLM_SCORING = os.getenv("JOURNAL_CLUB_LLM_SCORING", "1") == "1"
+CACHE_SCHEMA_VERSION = "analysis.v2"
 CACHE_DIR = Path(__file__).parents[1] / "cache" / "analysis"
 
 
@@ -125,6 +124,15 @@ class GapAnalysis(BaseModel):
     reproducibility: List[str] = Field(default_factory=list, description="Reproducibility concerns")
 
 
+class QualityScores(BaseModel):
+    """Structured quality scores with validation (0-1 scale)."""
+    methodology_rigor: float = Field(ge=0.0, le=1.0, description="Methodological rigor score")
+    statistical_power: float = Field(ge=0.0, le=1.0, description="Statistical power score")
+    reproducibility_score: float = Field(ge=0.0, le=1.0, description="Reproducibility score")
+    control_quality: float = Field(ge=0.0, le=1.0, description="Control quality score")
+    overall_quality: float = Field(ge=0.0, le=1.0, description="Overall quality score")
+
+
 # ---------------------------------------------------------------------------
 # Llama Server Client for external GPU-accelerated inference
 # ---------------------------------------------------------------------------
@@ -141,14 +149,19 @@ class LlamaServerLLM:
         self.max_tokens = max_tokens
         self._lock = threading.Lock()
         
-        # Test connection
+        # Test connection. Raise on failure so get_llm_client() can fall back
+        # to local models instead of caching a dead client.
+        import requests
         try:
-            import requests
             response = requests.get(f"{server_url}/health", timeout=5)
             if response.status_code != 200:
-                log.warning(f"Llama server health check failed: {response.status_code}")
-        except Exception as e:
-            log.warning(f"Failed to connect to llama server at {server_url}: {e}")
+                raise ConnectionError(
+                    f"Llama server health check failed: HTTP {response.status_code}"
+                )
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(
+                f"Failed to connect to llama server at {server_url}: {e}"
+            ) from e
     
     def invoke(self, messages, enable_thinking: bool = False):
         """
@@ -176,30 +189,41 @@ class LlamaServerLLM:
         if not enable_thinking:
             request_payload["chat_template_kwargs"] = {"enable_thinking": False}
         
-        # Generate response with thread safety
+        # Generate response with thread safety and retries on transient errors
         with self._lock:
-            try:
-                import requests
-                response = requests.post(
-                    f"{self.server_url}/v1/chat/completions",
-                    json=request_payload,
-                    timeout=120
-                )
-                response.raise_for_status()
-                data = response.json()
-                # OpenAI-compatible format returns content in choices[0].message.content
-                text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                if not text:
-                    log.warning(f"Llama server returned empty response. Full response: {data}")
-            except requests.exceptions.Timeout:
-                log.error(f"Llama server request timed out after 120s")
-                text = ""
-            except requests.exceptions.RequestException as e:
-                log.error(f"Llama server request failed: {e}")
-                text = ""
-            except Exception as e:
-                log.error(f"Llama server error: {e}")
-                text = ""
+            text = ""
+            import requests
+            for attempt in range(RETRY_ATTEMPTS):
+                try:
+                    response = requests.post(
+                        f"{self.server_url}/v1/chat/completions",
+                        json=request_payload,
+                        timeout=120
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    # OpenAI-compatible format returns content in choices[0].message.content
+                    text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if not text:
+                        log.warning(f"Llama server returned empty response. Full response: {data}")
+                    break
+                except requests.exceptions.Timeout:
+                    log.error(
+                        "Llama server request timed out after 120s (attempt %d/%d)",
+                        attempt + 1, RETRY_ATTEMPTS,
+                    )
+                except requests.exceptions.RequestException as e:
+                    log.error(
+                        "Llama server request failed (attempt %d/%d): %s",
+                        attempt + 1, RETRY_ATTEMPTS, e,
+                    )
+                except Exception as e:
+                    log.error(
+                        "Llama server error (attempt %d/%d): %s",
+                        attempt + 1, RETRY_ATTEMPTS, e,
+                    )
+                if attempt < RETRY_ATTEMPTS - 1:
+                    time.sleep(min(2 ** attempt, 5))
         
         # Return a simple object with content attribute to match langchain interface
         class Response:
@@ -343,7 +367,13 @@ def get_cached_analysis(paper: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         
         if cache_file.exists():
             log.debug("Loading cached analysis for: %s", paper.get("title", "unknown")[:50])
-            return json.loads(cache_file.read_text())
+            data = json.loads(cache_file.read_text())
+            # Ignore caches written by older schema versions (e.g. rule-based
+            # quality scores from before LLM scoring was introduced).
+            if data.get("cache_schema_version") != CACHE_SCHEMA_VERSION:
+                log.debug("Cached analysis has outdated schema, ignoring")
+                return None
+            return data
     except Exception as e:
         log.warning("Failed to load cached analysis: %s", e)
     
@@ -360,109 +390,136 @@ def save_cached_analysis(paper: Dict[str, Any], analysis: Dict[str, Any]) -> Non
         paper_hash = get_paper_hash(paper)
         cache_file = CACHE_DIR / f"{paper_hash}.json"
         
-        cache_file.write_text(json.dumps(analysis, indent=2))
+        payload = dict(analysis)
+        payload["cache_schema_version"] = CACHE_SCHEMA_VERSION
+        cache_file.write_text(json.dumps(payload, indent=2))
         log.debug("Saved cached analysis for: %s", paper.get("title", "unknown")[:50])
     except Exception as e:
         log.warning("Failed to save cached analysis: %s", e)
 
 
+_THINK_BLOCK_RE = re.compile(r"<think>.*?(?:</think>|$)", re.DOTALL)
+
+
+def _strip_thinking(text: str) -> str:
+    """Remove reasoning traces (Qwen-style <think> blocks) from LLM output."""
+    return _THINK_BLOCK_RE.sub("", text or "").strip()
+
+
 def _get_response_text(response: Any) -> str:
     """Extract string content from LLM response object or string."""
     if hasattr(response, "content"):
-        return str(response.content)
-    return str(response)
+        text = str(response.content)
+    else:
+        text = str(response)
+    return _strip_thinking(text)
+
+
+def invoke_llm(llm, messages, enable_thinking: bool = False):
+    """Invoke an LLM client, disabling reasoning mode where supported.
+
+    Reasoning traces (<think> blocks) waste the token budget for structured
+    tasks and pollute stored output; disable them whenever the client accepts
+    an enable_thinking kwarg.
+    """
+    try:
+        if hasattr(llm, 'invoke') and 'enable_thinking' in llm.invoke.__code__.co_varnames:
+            return llm.invoke(messages, enable_thinking=enable_thinking)
+    except Exception:
+        pass
+    return llm.invoke(messages)
+
+
+def _parse_json_with_retry(
+    llm_output: str,
+    model_cls,
+    max_retries: int | None = None,
+    llm=None,
+    messages=None,
+    enable_thinking: bool = False,
+):
+    """Parse LLM output as JSON and validate it with a Pydantic model.
+
+    If llm and messages are provided, re-invokes the LLM on failure instead
+    of retrying the same parse. Returns the validated model instance or None.
+    """
+    if max_retries is None:
+        max_retries = RETRY_ATTEMPTS
+
+    current_output = llm_output
+
+    for attempt in range(max_retries):
+        try:
+            result = json.loads(current_output)
+            return model_cls(**result)
+        except Exception as e:
+            log.warning(
+                "JSON parse/validation failed (attempt %d/%d): %s",
+                attempt + 1, max_retries, e,
+            )
+
+            # If we have an LLM and messages, re-invoke to get a new response
+            if llm is not None and messages is not None and attempt < max_retries - 1:
+                log.info("Re-invoking LLM (attempt %d/%d)", attempt + 2, max_retries)
+                try:
+                    response = invoke_llm(llm, messages, enable_thinking=enable_thinking)
+                    current_output = _get_response_text(response).strip()
+                    if not current_output:
+                        log.warning("LLM returned empty response on retry")
+                        continue
+                except Exception as retry_e:
+                    log.error("LLM re-invocation failed: %s", retry_e)
+                    continue
+
+            if attempt == max_retries - 1:
+                log.warning(
+                    "Failed to parse after %d attempts, using fallback",
+                    max_retries,
+                )
+                return None
+
+    return None
 
 
 def _parse_gap_analysis_with_retry(
     llm_output: str,
-    max_retries: int = None,
+    max_retries: int | None = None,
     llm=None,
     messages=None,
     enable_thinking: bool = False,
-) -> Dict[str, List[str]]:
+) -> Dict[str, List[str]] | None:
     """Parse gap analysis with retry logic using Pydantic validation.
-    
+
     If LLM and messages are provided, will re-invoke the LLM on retry
     instead of just retrying the same parse operation.
-    
-    Args:
-        llm_output: The initial LLM output string to parse
-        max_retries: Maximum number of retry attempts
-        llm: LLM client to re-invoke on retry (optional)
-        messages: Messages to send to LLM on retry (optional)
-        enable_thinking: Whether to enable thinking mode on retry
     """
-    if max_retries is None:
-        max_retries = RETRY_ATTEMPTS
-    
-    current_output = llm_output
-    
-    for attempt in range(max_retries):
-        try:
-            # Try to parse as JSON directly first
-            import json
-            result = json.loads(current_output)
-            
-            # Validate with Pydantic model
-            gap_analysis = GapAnalysis(**result)
-            
-            return {
-                "methodology": gap_analysis.methodology,
-                "controls": gap_analysis.controls,
-                "statistics": gap_analysis.statistics,
-                "reproducibility": gap_analysis.reproducibility,
-            }
-        except json.JSONDecodeError as e:
-            log.warning("JSON parsing failed (attempt %d/%d): %s", attempt + 1, max_retries, e)
-            
-            # If we have an LLM and messages, re-invoke to get a new response
-            if llm is not None and messages is not None and attempt < max_retries - 1:
-                log.info("Re-invoking LLM for gap analysis (attempt %d/%d)", attempt + 2, max_retries)
-                try:
-                    if hasattr(llm, 'invoke') and 'enable_thinking' in llm.invoke.__code__.co_varnames:
-                        response = llm.invoke(messages, enable_thinking=enable_thinking)
-                    else:
-                        response = llm.invoke(messages)
-                    current_output = _get_response_text(response).strip()
-                    if not current_output:
-                        log.warning("LLM returned empty response on retry")
-                        continue
-                except Exception as retry_e:
-                    log.error("LLM re-invocation failed: %s", retry_e)
-                    continue
-            
-            if attempt == max_retries - 1:
-                log.warning("Failed to parse after %d attempts, using rule-based fallback", max_retries)
-                return None
-        except Exception as e:
-            log.warning("Validation failed (attempt %d/%d): %s", attempt + 1, max_retries, e)
-            
-            # If we have an LLM and messages, re-invoke to get a new response
-            if llm is not None and messages is not None and attempt < max_retries - 1:
-                log.info("Re-invoking LLM for gap analysis (attempt %d/%d)", attempt + 2, max_retries)
-                try:
-                    if hasattr(llm, 'invoke') and 'enable_thinking' in llm.invoke.__code__.co_varnames:
-                        response = llm.invoke(messages, enable_thinking=enable_thinking)
-                    else:
-                        response = llm.invoke(messages)
-                    current_output = _get_response_text(response).strip()
-                    if not current_output:
-                        log.warning("LLM returned empty response on retry")
-                        continue
-                except Exception as retry_e:
-                    log.error("LLM re-invocation failed: %s", retry_e)
-                    continue
-            
-            if attempt == max_retries - 1:
-                log.warning("Failed to validate after %d attempts, using rule-based fallback", max_retries)
-                return None
-    
-    return None
+    gap_analysis = _parse_json_with_retry(
+        llm_output,
+        GapAnalysis,
+        max_retries=max_retries,
+        llm=llm,
+        messages=messages,
+        enable_thinking=enable_thinking,
+    )
+    if gap_analysis is None:
+        return None
+
+    return {
+        "methodology": gap_analysis.methodology,
+        "controls": gap_analysis.controls,
+        "statistics": gap_analysis.statistics,
+        "reproducibility": gap_analysis.reproducibility,
+    }
 
 
 def get_llm_client(use_finetuned: bool = None):
-    """Get LLM client (from llama-server,  fine-tuned model,
-    local base model, or fallback). Uses thread-safe caching.
+    """Get LLM client. Priority order:
+      1. fine-tuned merged model (when USE_FINETUNED=1 and the model exists)
+      2. external llama-server
+      3. GGUF model (llama-cpp-python)
+      4. local HuggingFace base model
+      5. OpenAI fallback
+    Uses thread-safe caching.
     """
 
     # Determine if we should use fine-tuned model
@@ -486,41 +543,21 @@ def get_llm_client(use_finetuned: bool = None):
         log.info("Loading LLM client (cache miss): %s", cache_key)
 
         # ------------------------------------------------------------------
-        # Try external llama-server first if enabled
-        # ------------------------------------------------------------------
-        if USE_LLAMA_SERVER:
-            try:
-                log.info("Using external llama-server at: %s", LLAMA_SERVER_URL)
-
-                llm = LlamaServerLLM(
-                    server_url=LLAMA_SERVER_URL,
-                    temperature=LLM_TEMPERATURE,
-                    max_tokens=LLM_MAX_TOKENS,
-                )
-
-                _cached_llm_clients[cache_key] = llm
-                return llm
-
-            except Exception as e:
-                log.warning(
-                    "Failed to connect to llama-server (%s), "
-                    "falling back to local models",
-                    e,
-                )
-
-                if not FALLBACK_TO_BASE:
-                    log.error("Fallback disabled, no LLM available")
-                    return None
-
-        # ------------------------------------------------------------------
-        # Try fine-tuned model first if enabled
+        # Use the fine-tuned merged model first when requested
+        # (JOURNAL_CLUB_USE_FINETUNED=1). This makes the trained model the
+        # actual inference backend instead of the llama-server base model.
         # ------------------------------------------------------------------
         if use_finetuned:
             finetuned_path = Path(__file__).parents[1] / FINETUNED_MODEL_PATH
 
             if finetuned_path.exists():
                 try:
-                    import torch
+                    try:
+                        import torch
+                    except ImportError:
+                        torch = None
+                    if torch is None:
+                        raise RuntimeError("torch is required to load the fine-tuned model")
                     from langchain_huggingface import HuggingFacePipeline
                     from transformers import (
                         AutoModelForCausalLM,
@@ -533,7 +570,7 @@ def get_llm_client(use_finetuned: bool = None):
                         finetuned_path,
                     )
 
-                    if torch.cuda.is_available():
+                    if torch and torch.cuda.is_available():
                         torch.cuda.empty_cache()
 
                     tokenizer = AutoTokenizer.from_pretrained(
@@ -543,10 +580,10 @@ def get_llm_client(use_finetuned: bool = None):
 
                     dtype = (
                         torch.float16
-                        if torch.cuda.is_available()
+                        if torch and torch.cuda.is_available()
                         else torch.float32
                     )
-                    device_map = "auto" if torch.cuda.is_available() else None
+                    device_map = "auto" if torch and torch.cuda.is_available() else None
 
                     model = AutoModelForCausalLM.from_pretrained(
                         str(finetuned_path),
@@ -575,7 +612,8 @@ def get_llm_client(use_finetuned: bool = None):
 
                 except Exception as e:
                     log.warning(
-                        "Failed to load fine-tuned model (%s)",
+                        "Failed to load fine-tuned model (%s), "
+                        "falling back to other backends",
                         e,
                     )
 
@@ -585,6 +623,34 @@ def get_llm_client(use_finetuned: bool = None):
                     if not FALLBACK_TO_BASE:
                         log.error("Fallback disabled, no LLM available")
                         return None
+
+        # ------------------------------------------------------------------
+        # Try external llama-server
+        # ------------------------------------------------------------------
+        if USE_LLAMA_SERVER:
+            try:
+                log.info("Using external llama-server at: %s", LLAMA_SERVER_URL)
+
+                llm = LlamaServerLLM(
+                    server_url=LLAMA_SERVER_URL,
+                    temperature=LLM_TEMPERATURE,
+                    max_tokens=LLM_MAX_TOKENS,
+                )
+
+                _cached_llm_clients[cache_key] = llm
+                return llm
+
+            except Exception as e:
+                log.warning(
+                    "Failed to connect to llama-server (%s), "
+                    "falling back to local models",
+                    e,
+                )
+
+                if not FALLBACK_TO_BASE:
+                    log.error("Fallback disabled, no LLM available")
+                    return None
+
 
         # ------------------------------------------------------------------
         # Try GGUF model with llama-cpp-python
@@ -1031,8 +1097,13 @@ Focus on:
             HumanMessage(content=prompt),
         ]
 
-        response = llm.invoke(messages)
-        return _get_response_text(response).strip()
+        response = invoke_llm(llm, messages, enable_thinking=False)
+        summary = _get_response_text(response).strip()
+        if not summary:
+            # Empty response (e.g. only an unclosed reasoning block): fall back
+            sentences = re.split(r'[.!?]', abstract)
+            return '. '.join(sentences[:3]) + '.'
+        return summary
 
     except Exception as e:
         log.warning("LLM summary generation failed: %s", e)
@@ -1087,10 +1158,7 @@ Each key should have a list of strings.
 
         # For structured JSON output tasks, disable thinking to save tokens for the actual response
         # This prevents the model from wasting its token budget on reasoning traces
-        if hasattr(llm, 'invoke') and 'enable_thinking' in llm.invoke.__code__.co_varnames:
-            response = llm.invoke(messages, enable_thinking=False)
-        else:
-            response = llm.invoke(messages)
+        response = invoke_llm(llm, messages, enable_thinking=False)
         
         resp_text = _get_response_text(response).strip()
 
@@ -1207,8 +1275,12 @@ Keep the critique concise (3-4 paragraphs) and constructive.
             HumanMessage(content=prompt),
         ]
 
-        response = llm.invoke(messages)
-        return _get_response_text(response).strip()
+        response = invoke_llm(llm, messages, enable_thinking=False)
+        critique_text = _get_response_text(response).strip()
+        if not critique_text:
+            # Empty response (e.g. only an unclosed reasoning block): fall back
+            return _rule_based_critique(paper, gap_analysis)
+        return critique_text
 
     except Exception as e:
         log.warning("LLM critique generation failed: %s", e)
@@ -1248,11 +1320,103 @@ def _rule_based_critique(paper: Dict[str, Any], gap_analysis: Dict[str, List[str
 # Quality Scoring
 # ---------------------------------------------------------------------------
 
+def _llm_score_paper_quality(
+    paper: Dict[str, Any],
+    gap_analysis: Dict[str, List[str]],
+    llm,
+) -> Dict[str, Any] | None:
+    """Score paper quality with the LLM against a rubric.
+
+    Returns a scores dict, or None if scoring failed and the caller should
+    use the rule-based fallback.
+    """
+    title = paper.get("title", "")
+    abstract = paper.get("abstract", "")
+
+    gap_text = ""
+    for category, issues in gap_analysis.items():
+        if issues:
+            gap_text += f"\n{category.capitalize()}: {', '.join(issues)}"
+
+    prompt = f"""Score the following research paper on scientific quality using a 0-1 scale (1 = excellent):
+
+Title: {title}
+
+Abstract: {abstract}
+
+Identified gaps:{gap_text if gap_text else ' None identified'}
+
+Score these dimensions:
+- methodology_rigor: appropriateness and rigor of the study design and methods
+- statistical_power: sample sizes, statistical tests, and appropriateness of the analysis
+- reproducibility_score: data/code availability and level of methodological detail
+- control_quality: presence and appropriateness of experimental controls
+- overall_quality: overall weighted assessment of the paper
+
+Format your response as a JSON object with exactly these keys and float values between 0 and 1: methodology_rigor, statistical_power, reproducibility_score, control_quality, overall_quality
+"""
+
+    try:
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        messages = [
+            SystemMessage(content="You are an expert scientific reviewer. Score research papers honestly against a quality rubric."),
+            HumanMessage(content=prompt),
+        ]
+
+        response = invoke_llm(llm, messages, enable_thinking=False)
+        parsed = _parse_json_with_retry(
+            _get_response_text(response).strip(),
+            QualityScores,
+            llm=llm,
+            messages=messages,
+            enable_thinking=False,
+        )
+        if parsed is None:
+            return None
+
+        return {
+            "methodology_rigor": round(parsed.methodology_rigor, 2),
+            "statistical_power": round(parsed.statistical_power, 2),
+            "reproducibility_score": round(parsed.reproducibility_score, 2),
+            "control_quality": round(parsed.control_quality, 2),
+            "overall_quality": round(parsed.overall_quality, 2),
+        }
+
+    except Exception as e:
+        log.warning("LLM quality scoring failed: %s", e)
+        return None
+
+
 def score_paper_quality(
     paper: Dict[str, Any],
     gap_analysis: Dict[str, List[str]],
-) -> Dict[str, float]:
-    """Score paper on various quality dimensions."""
+    llm=None,
+) -> Dict[str, Any]:
+    """Score paper on various quality dimensions.
+
+    Uses LLM rubric scoring when a client is available and
+    JOURNAL_CLUB_LLM_SCORING=1; falls back to deterministic rule-based
+    scoring otherwise.
+    """
+    if LLM_SCORING:
+        client = llm if llm is not None else get_llm_client()
+        if client is not None:
+            scores = _llm_score_paper_quality(paper, gap_analysis, client)
+            if scores:
+                scores["scoring_method"] = "llm"
+                return scores
+            log.warning("LLM quality scoring unavailable, using rule-based fallback")
+    scores = _rule_based_score_paper_quality(paper, gap_analysis)
+    scores["scoring_method"] = "rule_based"
+    return scores
+
+
+def _rule_based_score_paper_quality(
+    paper: Dict[str, Any],
+    gap_analysis: Dict[str, List[str]],
+) -> Dict[str, Any]:
+    """Deterministic rule-based quality scoring (fallback when no LLM is available)."""
 
     title = paper.get("title", "")
     abstract = paper.get("abstract", "")
@@ -1336,18 +1500,18 @@ def analyze_paper(
     cached = get_cached_analysis(paper)
     if cached:
         log.info("Using cached analysis for: %s", paper.get("title", "unknown"))
-        # Update memory to ensure analyzed_papers counter is accurate
-        if memory is None:
-            from .literature_memory import JournalClubMemory
-            memory = JournalClubMemory()
-        paper_key = paper.get("doi") or paper.get("pmid") or paper.get("title", "")
-        memory.update_paper_analysis(
-            paper_key,
-            summary=cached.get("summary"),
-            gap_analysis=cached.get("gap_analysis"),
-            quality_scores=cached.get("quality_scores"),
-            critique=cached.get("critique"),
-        )
+        # Update the provided memory if there is one. Never construct a new
+        # JournalClubMemory here: concurrent threads each loading/saving the
+        # shared file cause lost updates.
+        if memory is not None:
+            paper_key = paper.get("doi") or paper.get("pmid") or paper.get("title", "")
+            memory.update_paper_analysis(
+                paper_key,
+                summary=cached.get("summary"),
+                gap_analysis=cached.get("gap_analysis"),
+                quality_scores=cached.get("quality_scores"),
+                critique=cached.get("critique"),
+            )
         return cached
 
     # Generate summary
@@ -1438,8 +1602,6 @@ def analyze_batch_parallel(
     """Run full analysis pipeline on a batch of papers in parallel."""
     
     log.info("Analyzing batch of %d papers (parallel, %d workers)", len(papers), MAX_ANALYSIS_WORKERS)
-    results = []
-    
     def analyze_single_paper(paper: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze a single paper for parallel execution."""
         # Get related papers for this paper
@@ -1452,26 +1614,34 @@ def analyze_batch_parallel(
         return analyze_paper(paper, domain, related, memory)
     
     with ThreadPoolExecutor(max_workers=MAX_ANALYSIS_WORKERS) as executor:
-        future_to_paper = {
-            executor.submit(analyze_single_paper, paper): paper 
-            for paper in papers
+        future_to_index = {
+            executor.submit(analyze_single_paper, paper): i
+            for i, paper in enumerate(papers)
         }
-        
-        for future in as_completed(future_to_paper):
-            paper = future_to_paper[future]
+
+        # Keep results aligned with the input order — callers pair results
+        # with papers by index.
+        results: List[Optional[Dict[str, Any]]] = [None] * len(papers)
+
+        for future in as_completed(future_to_index):
+            i = future_to_index[future]
+            paper = papers[i]
             try:
-                result = future.result()
-                results.append(result)
+                results[i] = future.result()
                 log.info("Completed analysis for: %s", paper.get("title", "unknown")[:50])
             except Exception as e:
                 log.error("Analysis failed for %s: %s", paper.get("title", "unknown"), e)
-                # Add empty result to maintain order
-                results.append({
+                results[i] = {
                     "summary": "Analysis failed",
                     "gap_analysis": {"methodology": [], "controls": [], "statistics": [], "reproducibility": []},
                     "critique": f"Analysis failed: {str(e)}",
                     "quality_scores": {"methodology_rigor": 0.0, "statistical_power": 0.0, "reproducibility_score": 0.0, "control_quality": 0.0, "overall_quality": 0.0},
-                })
+                }
     
-    log.info("Parallel batch analysis complete: %d/%d papers processed", len(results), len(papers))
-    return results
+    log.info(
+        "Parallel batch analysis complete: %d/%d papers processed",
+        len(papers) - results.count(None),
+        len(papers),
+    )
+    # Every slot is populated above (result or failure placeholder).
+    return cast(List[Dict[str, Any]], results)

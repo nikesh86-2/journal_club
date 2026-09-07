@@ -140,6 +140,9 @@ def _format_paper_section(paper: Dict[str, Any], index: int) -> List[str]:
         ])
 
         for metric, score in quality_scores.items():
+            if metric == "scoring_method":
+                lines.append(f"- **Scoring Method:** {score}")
+                continue
             if score is not None:
                 lines.append(f"- **{metric.replace('_', ' ').title()}:** {score}/1.0")
 

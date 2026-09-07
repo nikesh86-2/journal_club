@@ -17,6 +17,7 @@ Usage:
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
 import torch
@@ -35,6 +36,12 @@ from transformers import (
     TrainingArguments,
 )
 
+# Ensure repo root is on sys.path so `from core...` works when this file is
+# run directly (e.g. `python core/train_lora.py`).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from core.config import resolve_env
+
 log = logging.getLogger("journal_club.training")
 
 CONFIG_PATH = Path("training/journal_club_training_config.yaml")
@@ -49,7 +56,7 @@ LOGS_DIR = Path("training/logs")
 
 def load_config() -> dict:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        return resolve_env(yaml.safe_load(f))
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +164,7 @@ def load_dataset():
     if not HF_DATASET_PATH.exists():
         raise FileNotFoundError(
             f"Dataset not found at {HF_DATASET_PATH}. "
-            "Run training/convert_to_hf_dataset.py first."
+            "Run training/convert_journal_club_dataset.py first."
         )
 
     log.info("Loading dataset from %s", HF_DATASET_PATH)
@@ -301,6 +308,19 @@ def main():
 
     training_config = config.get("training", {})
 
+    # Eval / best-model selection wired from the YAML config
+    eval_strategy = training_config.get("eval_strategy", "no")
+    eval_steps = int(training_config.get("eval_steps", 250))
+    save_best = bool(training_config.get("save_best_model", False))
+    save_steps = int(training_config.get("save_steps", 100))
+
+    if save_best and eval_strategy in ("no", None, ""):
+        log.warning(
+            "save_best_model=true but no eval_strategy configured; "
+            "enabling 'steps' evaluation"
+        )
+        eval_strategy = "steps"
+
     training_args = TrainingArguments(
         output_dir=str(OUTPUT_DIR),
 
@@ -331,12 +351,24 @@ def main():
             5,
         ),
 
-        save_steps=training_config.get(
-            "save_steps",
-            100,
-        ),
+        # -----------------------------------------------------------
+        # Evaluation / best-model selection
+        # -----------------------------------------------------------
 
+        eval_strategy=eval_strategy,
+        eval_steps=eval_steps,
+
+        # When keeping the best checkpoint, save_strategy must match
+        # eval_strategy; otherwise save on a fixed step cadence.
+        save_strategy=eval_strategy if save_best else "steps",
+        save_steps=save_steps,
         save_total_limit=2,
+        load_best_model_at_end=save_best,
+        metric_for_best_model=training_config.get(
+            "metric_for_best_model",
+            "eval_loss",
+        ),
+        greater_is_better=False,
 
         # -----------------------------------------------------------
         # Low VRAM settings

@@ -21,6 +21,7 @@ from typing import Any, Dict, List
 
 import yaml
 
+from . import config
 from .research_agent_adaptive import (
     CachedSentenceTransformerEmbeddings,
     cached_semantic_search,
@@ -35,14 +36,7 @@ log = logging.getLogger("journal_club.recommendations")
 # Config
 # ---------------------------------------------------------------------------
 
-DEFAULT_FAISS_INDEX_PATH = str(
-    Path(__file__).parents[1] / "cache" / "faiss_index"
-)
-
-FAISS_INDEX_PATH = os.getenv(
-    "JOURNAL_CLUB_FAISS_INDEX_PATH",
-    DEFAULT_FAISS_INDEX_PATH
-)
+FAISS_INDEX_PATH = os.getenv("JOURNAL_CLUB_FAISS_INDEX_PATH", config.DEFAULT_FAISS_INDEX_PATH)
 
 # Foundational paper criteria
 FOUNDATIONAL_MIN_CITATIONS = 50
@@ -58,7 +52,7 @@ FINETUNED_MODEL_PATH = os.getenv(
 FALLBACK_TO_BASE = os.getenv("JOURNAL_CLUB_FALLBACK_TO_BASE", "1") == "1"
 
 
-from .paper_analyzer import get_llm_client, _get_response_text
+from .paper_analyzer import get_llm_client, invoke_llm, _get_response_text
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +233,7 @@ Do these papers have contradictory or conflicting conclusions? Answer "yes" or "
                 HumanMessage(content=prompt),
             ]
 
-            response = llm_client.invoke(messages)
+            response = invoke_llm(llm_client, messages, enable_thinking=False)
             resp_str = _get_response_text(response).lower()
 
             if "yes" in resp_str:

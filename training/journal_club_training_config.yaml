@@ -1,10 +1,10 @@
 # Journal Club LoRA Fine-Tuning Configuration
 
-# Base model
-model_name: /home/nike/models/qwen3.6-35b-a3b
+# Base model (env-overridable: JOURNAL_CLUB_BASE_MODEL)
+model_name: ${JOURNAL_CLUB_BASE_MODEL:-/home/nike/models/qwen3.6-35b-a3b}
 
-# Student model for fine-tuning (smaller model to fit in VRAM)
-student_model_name: /home/nike/models/qwen3-4B
+# Student model for fine-tuning (env-overridable: JOURNAL_CLUB_STUDENT_MODEL)
+student_model_name: ${JOURNAL_CLUB_STUDENT_MODEL:-/home/nike/models/qwen3-4B}
 
 # Output directories
 output_dir: training/journal_club_output
