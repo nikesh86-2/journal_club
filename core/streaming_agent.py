@@ -401,7 +401,7 @@ def append_to_faiss(docs: List) -> int:
 # Streaming worker
 # ---------------------------------------------------------------------------
 
-def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int = 240) -> List[dict]:
+def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int = 240, since_date: str | None = None) -> List[dict]:
     """Fetch papers from Europe PMC using full-text search.
 
     Europe PMC indexes bioRxiv/medRxiv preprints and supports proper Boolean
@@ -411,6 +411,9 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
     Results are sorted by first publication date (newest first). When the
     time window is unlimited (<= 0), the request pages through results so
     older literature is not missed (capped at 500 results).
+    If since_date is provided (YYYY-MM-DD), only papers with
+    FIRST_PDATE >= since_date are fetched (used for unlimited windows to avoid
+    re-fetching already-seen papers).
     """
     import urllib.request
     import urllib.parse
@@ -420,11 +423,14 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
     max_pages = 5
     try:
         # Build date filter
+        date_filter = ""
         if time_window_months > 0:
             cutoff = datetime.utcnow() - timedelta(days=time_window_months * 30)
             date_filter = f' AND (FIRST_PDATE:[{cutoff.strftime("%Y-%m-%d")} TO *])'
-        else:
-            date_filter = ""
+        elif time_window_months <= 0 and since_date is not None:
+            # Since date provided: fetch papers with FIRST_PDATE >= since_date
+            date_filter = f' AND (FIRST_PDATE:[{since_date} TO *])'
+        # else: no date filter (fetch all)
 
         # SRC:PPR filters to preprints (bioRxiv, medRxiv, etc.)
         search_query = f"({query}){date_filter} AND SRC:PPR"
@@ -566,18 +572,31 @@ def stream_papers(
                 all_new_papers = []
                 total_candidates = 0
 
+                # Determine if we should use a bookmark (only when the time
+                # window is unlimited). The bookmark records the exclusive
+                # lower bound date so we don't re-fetch already-seen preprints.
+                use_bookmark = time_window_months <= 0
+
                 for query in queries:
+                    since_date = None
+                    if use_bookmark:
+                        bookmark_key = f"bookmark:{topic_name}:{query}"
+                        since_date = memory.get_bookmark(bookmark_key)
+
                     papers = []
                     if cached_semantic_search is not None:
                         try:
                             papers = cached_semantic_search(query, limit=batch_size)
                         except TypeError:
                             papers = cached_semantic_search(query, batch_size)
-                    else:
-                        papers = []
 
                     # Europe PMC search (proper full-text search of preprints)
-                    epmc_papers = fetch_europepmc_papers(query, limit=batch_size, time_window_months=time_window_months)
+                    epmc_papers = fetch_europepmc_papers(
+                        query,
+                        limit=batch_size,
+                        time_window_months=time_window_months,
+                        since_date=since_date,
+                    )
                     papers = (papers or []) + epmc_papers
                     total_candidates += len(papers)
 
@@ -609,7 +628,6 @@ def stream_papers(
                             p,
                             topic_name=topic_name,
                             domain=domain,
-                            time_window_months=time_window_months,
                         )
 
                         # Analyze paper inline (blocking call)
@@ -618,6 +636,23 @@ def stream_papers(
                         if record:
                             _stream_cache.add(pkey)
                             all_new_papers.append(p)
+
+                    # Advance the Europe PMC bookmark to just past the newest
+                    # fetched date (exclusive lower bound), so the next cycle
+                    # requests only strictly newer preprints.
+                    if use_bookmark and epmc_papers:
+                        max_date = ""
+                        for p in epmc_papers:
+                            d = p.get("publication_date") or ""
+                            if d > max_date:
+                                max_date = d
+                        if max_date:
+                            parsed = _parse_publication_date(max_date)
+                            if parsed:
+                                next_since = (parsed + timedelta(days=1)).strftime("%Y-%m-%d")
+                                current = memory.get_bookmark(bookmark_key)
+                                if current is None or next_since > current:
+                                    memory.set_bookmark(bookmark_key, next_since)
 
                 if all_new_papers:
                     # Also append to FAISS if available

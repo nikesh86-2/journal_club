@@ -265,6 +265,15 @@ class JournalClubMemory:
             ).fetchone()
         return row[0] if row else default
 
+    def get_bookmark(self, key: str) -> str | None:
+        """Get a string bookmark (e.g. a Europe PMC fetch cursor) from metadata."""
+        value = self.get_metadata(key)
+        return value if value not in (None, "") else None
+
+    def set_bookmark(self, key: str, value: str) -> None:
+        """Store a string bookmark in metadata."""
+        self.set_metadata(key, value)
+
     # ------------------------------------------------------------------
     # Persistence
     # ------------------------------------------------------------------
