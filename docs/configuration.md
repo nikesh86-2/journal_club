@@ -26,6 +26,7 @@ Copy `.env.example` to `.env` and edit. The full list:
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `JOURNAL_CLUB_LLM_MODEL` | `gpt-4` | OpenAI fallback model name |
+| `JOURNAL_CLUB_LLM_BACKEND` | `auto` | LLM backend selection: `auto`, `finetuned`, `llama_server`, `gguf`, `local_hf`, or `openai` |
 | `JOURNAL_CLUB_LLM_TEMPERATURE` | `0.3` | Sampling temperature |
 | `JOURNAL_CLUB_LLM_MAX_TOKENS` | `2000` | Max new tokens |
 | `JOURNAL_CLUB_USE_LLAMA_SERVER` | `1` | Use external llama-server |

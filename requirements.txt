@@ -15,3 +15,5 @@ transformers
 peft
 accelerate
 datasets
+# faiss is compiled against NumPy 1.x; keep NumPy below 2 to avoid import errors.
+numpy<2

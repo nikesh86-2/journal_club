@@ -76,6 +76,7 @@ JOURNAL_CLUB_TIME_WINDOW_MONTHS=0  # Set to 0 or negative for unlimited historic
 JOURNAL_CLUB_MAX_MEMORY_PAPERS=1000  # Max unique papers stored in memory before quality-aware trimming
 JOURNAL_CLUB_WEB_PORT=5000
 JOURNAL_CLUB_LLM_MODEL=gpt-4
+JOURNAL_CLUB_LLM_BACKEND=auto  # auto | finetuned | llama_server | gguf | local_hf | openai
 JOURNAL_CLUB_LITERATURE_MEMORY_PATH=cache/journal_club_memory.db
 
 # Embeddings (used for FAISS indexing and semantic search)
@@ -307,6 +308,72 @@ Training hyperparameters are configured in `training/journal_club_training_confi
 - Training epochs: 2 (literature domain)
 - Learning rate: 1.5e-5
 - Target modules: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
+
+## Running on an HPC cluster
+
+Compute nodes are usually **offline**, so models are not downloaded on demand.
+Download each model once (from a login node that has internet access) into a
+shared or scratch filesystem, then point the pipeline at the local paths.
+
+### 1. Download models to shared storage
+
+Use a path every node can see, e.g. `/scratch/$USER/models`. For HuggingFace
+models, use `--local-dir` so the path is predictable:
+
+```bash
+huggingface-cli download sentence-transformers/all-MiniLM-L6-v2 \
+  --local-dir /scratch/$USER/models/all-MiniLM-L6-v2
+
+huggingface-cli download <your-llm-model-id> \
+  --local-dir /scratch/$USER/models/<your-llm-model-id>
+```
+
+For GGUF files, just copy the `.gguf` to the same shared location.
+
+### 2. Point the pipeline at the local copies
+
+Set these in `.env` or export them in your SLURM script. Pick **one** LLM
+backend (`auto | finetuned | llama_server | gguf | local_hf | openai`):
+
+```bash
+# Embeddings (FAISS index + semantic search)
+JOURNAL_CLUB_EMBEDDING_MODEL=/scratch/$USER/models/all-MiniLM-L6-v2
+
+# Option A: local HuggingFace LLM
+JOURNAL_CLUB_LLM_BACKEND=local_hf
+JOURNAL_CLUB_LOCAL_BASE_MODEL_PATH=/scratch/$USER/models/<your-llm-model-id>
+
+# Option B: local GGUF LLM (llama-cpp-python)
+# JOURNAL_CLUB_LLM_BACKEND=gguf
+# JOURNAL_CLUB_GGUF_MODEL_PATH=/scratch/$USER/models/<model>.gguf
+
+# Option C: merged fine-tuned model
+# JOURNAL_CLUB_LLM_BACKEND=finetuned
+# JOURNAL_CLUB_FINETUNED_MODEL_PATH=/scratch/$USER/models/journal_club_merged_model
+
+# Option D: llama-server running on a node the job can reach (no local download)
+# JOURNAL_CLUB_LLM_BACKEND=llama_server
+# JOURNAL_CLUB_LLAMA_SERVER_URL=http://<host>:8080
+```
+
+### 3. Point HuggingFace at the shared cache (recommended)
+
+```bash
+export HF_HOME=/scratch/$USER/huggingface
+export TRANSFORMERS_CACHE=/scratch/$USER/huggingface
+```
+
+This reuses one cache across nodes and avoids re-downloading tokenizers/configs.
+
+### 4. Run via SLURM
+
+The repo ships example scripts (`run_journalclub.slurm`, `run_test.slurm`,
+`run_test_fixed.slurm`). Edit their `#SBATCH` flags, `module load`, and
+`conda activate` lines for your cluster, add the exports above, then submit:
+
+```bash
+sbatch run_journalclub.slurm
+```
 
 ## License
 

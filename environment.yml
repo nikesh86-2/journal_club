@@ -5,6 +5,7 @@ channels:
   - huggingface
 dependencies:
   - python=3.10
+  - numpy<2
   - pytorch
   - torchvision
   - torchaudio

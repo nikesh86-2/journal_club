@@ -67,6 +67,14 @@ LLAMA_SERVER_URL = os.getenv("JOURNAL_CLUB_LLAMA_SERVER_URL", "http://localhost:
 USE_LLAMA_SERVER = os.getenv("JOURNAL_CLUB_USE_LLAMA_SERVER", "1") == "1"
 FALLBACK_TO_BASE = os.getenv("JOURNAL_CLUB_FALLBACK_TO_BASE", "1") == "1"
 FORCE_CPU_OFFLOAD = os.getenv("JOURNAL_CLUB_FORCE_CPU_OFFLOAD", "0") == "1"
+# Which LLM backend to select. One of:
+#   auto         - try backends in the priority order below (default)
+#   finetuned    - merged LoRA model only
+#   llama_server - external llama-server only
+#   gguf         - local GGUF model only
+#   local_hf     - local HuggingFace model only
+#   openai       - OpenAI API only
+LLM_BACKEND = os.getenv("JOURNAL_CLUB_LLM_BACKEND", "auto").strip().lower()
 RETRY_ATTEMPTS = int(os.getenv("JOURNAL_CLUB_RETRY_ATTEMPTS", "3"))
 MAX_ANALYSIS_WORKERS = int(os.getenv("JOURNAL_CLUB_MAX_ANALYSIS_WORKERS", "4"))
 ENABLE_ANALYSIS_CACHE = os.getenv("JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE", "1") == "1"
@@ -80,6 +88,23 @@ _cached_llm_clients: Dict[str, Any] = {}
 # Protects the entire LLM client cache lifecycle:
 # check -> create -> store and cleanup -> remove.
 _llm_cache_lock = threading.Lock()
+
+
+_BACKEND_PRIORITY = ("finetuned", "llama_server", "gguf", "local_hf", "openai")
+
+
+def _backend_enabled(name: str) -> bool:
+    """Return True when the given LLM backend should be attempted."""
+    if LLM_BACKEND == "auto":
+        return True
+    if LLM_BACKEND in _BACKEND_PRIORITY:
+        return LLM_BACKEND == name
+    log.warning(
+        "Unknown JOURNAL_CLUB_LLM_BACKEND=%r, falling back to 'auto'",
+        LLM_BACKEND,
+    )
+    return True
+
 
 def cleanup_llm_clients(force: bool = False):
     """Properly clean up all LLM clients to prevent segfaults.
@@ -524,7 +549,7 @@ def get_llm_client(use_finetuned: bool = None):
 
     # Determine if we should use fine-tuned model
     if use_finetuned is None:
-        use_finetuned = USE_FINETUNED
+        use_finetuned = USE_FINETUNED or LLM_BACKEND == "finetuned"
 
     cache_key = "finetuned" if use_finetuned else f"base_{LOCAL_BASE_MODEL_PATH}"
 
@@ -547,7 +572,7 @@ def get_llm_client(use_finetuned: bool = None):
         # (JOURNAL_CLUB_USE_FINETUNED=1). This makes the trained model the
         # actual inference backend instead of the llama-server base model.
         # ------------------------------------------------------------------
-        if use_finetuned:
+        if _backend_enabled("finetuned") and use_finetuned:
             finetuned_path = Path(__file__).parents[1] / FINETUNED_MODEL_PATH
 
             if finetuned_path.exists():
@@ -627,7 +652,7 @@ def get_llm_client(use_finetuned: bool = None):
         # ------------------------------------------------------------------
         # Try external llama-server
         # ------------------------------------------------------------------
-        if USE_LLAMA_SERVER:
+        if _backend_enabled("llama_server") and USE_LLAMA_SERVER:
             try:
                 log.info("Using external llama-server at: %s", LLAMA_SERVER_URL)
 
@@ -655,7 +680,7 @@ def get_llm_client(use_finetuned: bool = None):
         # ------------------------------------------------------------------
         # Try GGUF model with llama-cpp-python
         # ------------------------------------------------------------------
-        if GGUF_MODEL_PATH and os.path.exists(GGUF_MODEL_PATH):
+        if _backend_enabled("gguf") and GGUF_MODEL_PATH and os.path.exists(GGUF_MODEL_PATH):
             try:
                 log.info(
                     "Loading GGUF model from: %s",
@@ -688,7 +713,7 @@ def get_llm_client(use_finetuned: bool = None):
         # ------------------------------------------------------------------
         # Try Local Base Model (Offline)
         # ------------------------------------------------------------------
-        if LOCAL_BASE_MODEL_PATH and os.path.exists(LOCAL_BASE_MODEL_PATH):
+        if _backend_enabled("local_hf") and LOCAL_BASE_MODEL_PATH and os.path.exists(LOCAL_BASE_MODEL_PATH):
             try:
                 import torch
                 from langchain_huggingface import HuggingFacePipeline
@@ -1042,21 +1067,24 @@ def get_llm_client(use_finetuned: bool = None):
         # ------------------------------------------------------------------
         # Fallback to direct OpenAI if available
         # ------------------------------------------------------------------
-        try:
-            from langchain_openai import ChatOpenAI
+        if _backend_enabled("openai"):
+            try:
+                from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(
-                model=LLM_MODEL,
-                temperature=LLM_TEMPERATURE,
-                max_tokens=LLM_MAX_TOKENS,
-            )
+                llm = ChatOpenAI(
+                    model=LLM_MODEL,
+                    temperature=LLM_TEMPERATURE,
+                    max_tokens=LLM_MAX_TOKENS,
+                )
 
-            _cached_llm_clients[cache_key] = llm
-            return llm
+                _cached_llm_clients[cache_key] = llm
+                return llm
 
-        except ImportError:
-            log.warning("No LLM client available")
-            return None
+            except ImportError:
+                log.warning("No LLM client available")
+                return None
+
+        return None
 
 # ---------------------------------------------------------------------------
 # Summary Generation
