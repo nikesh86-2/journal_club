@@ -50,6 +50,7 @@ Copy `.env.example` to `.env` and edit. The full list:
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `JOURNAL_CLUB_TIME_WINDOW_MONTHS` | `0` | Recency window (`<= 0` = unlimited) |
+| `JOURNAL_CLUB_ENABLE_SEMANTIC_SCHOLAR` | `1` | Query Semantic Scholar during streaming (`0` = Europe PMC only) |
 | `JOURNAL_CLUB_STREAM_INTERVAL` | `30` | Seconds between cycles |
 | `JOURNAL_CLUB_STREAM_BATCH_SIZE` | `20` | Candidates per query per cycle |
 | `JOURNAL_CLUB_STREAM_MAX_IDLE` | `0` | Stop after N idle cycles (`0` = never) |

@@ -70,6 +70,11 @@ DEDUP_ABSTRACT_PREFIX_LEN = int(os.getenv("JOURNAL_CLUB_DEDUP_ABSTRACT_PREFIX_LE
 
 DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "0"))
 
+# Whether to query Semantic Scholar during streaming ingestion. Disable to
+# rely solely on Europe PMC (useful when the Semantic Scholar API is slow or
+# rate-limited).
+ENABLE_SEMANTIC_SCHOLAR = os.getenv("JOURNAL_CLUB_ENABLE_SEMANTIC_SCHOLAR", "1") == "1"
+
 # ---------------------------------------------------------------------------
 # Hard-reject terms — papers matching any of these are never relevant
 # ---------------------------------------------------------------------------
@@ -590,7 +595,7 @@ def stream_papers(
                         s2_gated = since_date is not None
 
                     papers = []
-                    if not s2_gated and cached_semantic_search is not None:
+                    if ENABLE_SEMANTIC_SCHOLAR and not s2_gated and cached_semantic_search is not None:
                         try:
                             papers = cached_semantic_search(query, limit=batch_size)
                         except TypeError:
