@@ -325,7 +325,7 @@ def append_to_faiss(docs: List) -> int:
 
     try:
         # Initialize Document if not available
-        if Document is None:
+        if globals().get('Document') is None:
             class Document:
                 def __init__(self, page_content, metadata):
                     self.page_content = page_content
