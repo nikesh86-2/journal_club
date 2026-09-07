@@ -75,13 +75,14 @@ class JournalClubMemory:
 
     @staticmethod
     def _resolve_db_path(path: str | None) -> str:
-        if path:
-            p = str(path)
-            if p.endswith(_LEGACY_JSON_SUFFIX):
-                # A legacy JSON path was supplied: use a sibling .db file.
-                return p[: -len(_LEGACY_JSON_SUFFIX)] + ".db"
-            return p
-        return str(config.DEFAULT_MEMORY_PATH)
+        if path is None:
+            path = str(config.DEFAULT_MEMORY_PATH)
+        p = str(path)
+        if p.endswith(_LEGACY_JSON_SUFFIX):
+            # A legacy JSON path was supplied (or is set via the env var):
+            # use a sibling .db file and migrate the JSON automatically.
+            return p[: -len(_LEGACY_JSON_SUFFIX)] + ".db"
+        return p
 
     @staticmethod
     def _connect(db_path: str) -> sqlite3.Connection:
