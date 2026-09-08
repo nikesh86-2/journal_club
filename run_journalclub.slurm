@@ -48,6 +48,8 @@ export JOURNAL_CLUB_LLM_BACKEND=local_hf
 export JOURNAL_CLUB_ANALYZE_INLINE=0
 export JOURNAL_CLUB_STREAM_CYCLES=3
 export JOURNAL_CLUB_STREAM_INTERVAL=30
+# Sync delay between streaming and analysis to let DB writes flush
+export JOURNAL_CLUB_STREAM_SYNC_DELAY=5
 
 # Older runs cached prompt-echo / rule-fallback "analyses". Wipe the cache so
 # every paper gets a fresh LLM analysis this run; the cache stays enabled
@@ -84,6 +86,11 @@ echo ""
 echo "Step 1: Running streaming ingestion..."
 bash scripts/run_journal_club.sh streaming
 
+# Step 1.5: Sync delay to ensure DB writes are flushed before analysis
+echo ""
+echo "Step 1.5: Sync delay (${JOURNAL_CLUB_STREAM_SYNC_DELAY}s) to ensure DB writes are flushed..."
+sleep "$JOURNAL_CLUB_STREAM_SYNC_DELAY"
+
 # Step 2: Post-streaming deduplication (safe, idempotent)
 echo ""
 echo "Step 2: Deduplicating papers..."
@@ -107,9 +114,9 @@ echo ""
 echo "Step 4: Generating reports..."
 bash scripts/run_journal_club.sh reports
 
-# Step 5: Final statistics
+# Step 6: Final statistics
 echo ""
-echo "Step 5: Final statistics..."
+echo "Step 6: Final statistics..."
 python3 -c "
 import sys
 sys.path.insert(0, '.')

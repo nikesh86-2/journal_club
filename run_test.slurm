@@ -22,6 +22,8 @@ export LD_LIBRARY_PATH="/scratch/fbsnpat/envs/biophysics-research-agent-new/lib:
 export JOURNAL_CLUB_MAX_ANALYSIS_WORKERS=2
 export JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE=1
 export JOURNAL_CLUB_FORCE_CPU_OFFLOAD=0
+# Sync delay between streaming and analysis to let DB writes flush
+export JOURNAL_CLUB_STREAM_SYNC_DELAY=5
 
 echo "=== Journal Club Test Run ==="
 echo "Starting at: $(date)"
@@ -48,6 +50,11 @@ print(f'Stats: {memory.get_statistics()}')
 echo ""
 echo "Step 2: Running streaming (1 cycle)..."
 JOURNAL_CLUB_STREAM_CYCLES=1 JOURNAL_CLUB_STREAM_INTERVAL=30 bash scripts/run_journal_club.sh streaming
+
+# Step 2.5: Sync delay to ensure DB writes are flushed before analysis
+echo ""
+echo "Step 2.5: Sync delay (${JOURNAL_CLUB_STREAM_SYNC_DELAY}s) to ensure DB writes are flushed..."
+sleep "$JOURNAL_CLUB_STREAM_SYNC_DELAY"
 
 # Step 3: Run analysis
 echo ""

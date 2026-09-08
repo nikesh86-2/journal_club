@@ -140,7 +140,7 @@ def search_semantic_scholar(query: str, limit: int = 25) -> List:
                 SEMANTIC_SCHOLAR_API_URL,
                 params=params,
                 headers=headers,
-                timeout=10,
+                timeout=30,
             )
 
             if resp.status_code == 429:

@@ -40,6 +40,8 @@ export JOURNAL_CLUB_STREAM_BATCH_SIZE="${JOURNAL_CLUB_STREAM_BATCH_SIZE:-20}"
 export JOURNAL_CLUB_STREAM_CYCLES="${JOURNAL_CLUB_STREAM_CYCLES:-3}"
 # Prevent redundant dependency checks across pipeline stages
 export DEPENDENCIES_CHECKED=1
+# Sync delay between streaming and analysis (seconds) to let DB writes flush
+export JOURNAL_CLUB_STREAM_SYNC_DELAY="${JOURNAL_CLUB_STREAM_SYNC_DELAY:-5}"
 
 echo "=== Journal Club Pipeline ==="
 echo "FAISS Index: $JOURNAL_CLUB_FAISS_INDEX_PATH"
@@ -181,6 +183,8 @@ case "${1:-all}" in
     all)
         echo "Starting full pipeline..."
         start_streaming 3 30
+        echo "Sync delay: ${JOURNAL_CLUB_STREAM_SYNC_DELAY}s to ensure DB writes are flushed..."
+        sleep "$JOURNAL_CLUB_STREAM_SYNC_DELAY"
         run_analysis
         generate_reports
         echo "Full pipeline complete. Starting web server..."
@@ -189,6 +193,8 @@ case "${1:-all}" in
     all-with-training)
         echo "Starting full pipeline with training..."
         start_streaming 3 30
+        echo "Sync delay: ${JOURNAL_CLUB_STREAM_SYNC_DELAY}s to ensure DB writes are flushed..."
+        sleep "$JOURNAL_CLUB_STREAM_SYNC_DELAY"
         run_analysis
         generate_reports
         trigger_training
