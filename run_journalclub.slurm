@@ -28,6 +28,9 @@ export HF_HOME=/users/fbsnpat/.cache/huggingface
 # The base Mistral-7B in ./mistral-7b has no chat template and cannot follow
 # the "output JSON only" prompts, so every structured call failed and fell
 # back to rule-based analysis. Qwen2.5-7B-Instruct is fully cached offline.
+# NOTE: .env also sets JOURNAL_CLUB_LOCAL_BASE_MODEL_PATH to the same path,
+# because run_journal_club.sh re-sources .env and would otherwise override
+# the export below.
 # ---------------------------------------------------------------------------
 QWEN_SNAPSHOT=/users/fbsnpat/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28
 if [ ! -f "$QWEN_SNAPSHOT/config.json" ]; then
@@ -46,9 +49,9 @@ export JOURNAL_CLUB_ANALYZE_INLINE=0
 export JOURNAL_CLUB_STREAM_CYCLES=3
 export JOURNAL_CLUB_STREAM_INTERVAL=30
 
-# Older runs cached prompt-echo / rule-fallback "analyses". Disable the cache
-# and wipe it so every paper gets a fresh LLM analysis in this run.
-export JOURNAL_CLUB_ENABLE_ANALYSIS_CACHE=0
+# Older runs cached prompt-echo / rule-fallback "analyses". Wipe the cache so
+# every paper gets a fresh LLM analysis this run; the cache stays enabled
+# (per .env) and is repopulated with clean results.
 rm -rf cache/analysis
 
 echo "=== Journal Club Pipeline ==="
