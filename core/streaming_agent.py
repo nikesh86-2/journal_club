@@ -75,6 +75,13 @@ DEFAULT_TIME_WINDOW_MONTHS = int(os.getenv("JOURNAL_CLUB_TIME_WINDOW_MONTHS", "0
 # rate-limited).
 ENABLE_SEMANTIC_SCHOLAR = os.getenv("JOURNAL_CLUB_ENABLE_SEMANTIC_SCHOLAR", "1") == "1"
 
+# Whether stream workers should run the GPU-heavy LLM analysis inline as
+# papers arrive. When disabled, papers are ingested only and a later analysis
+# pass (run_analysis.py) handles them in a dedicated, cleanly-exiting process
+# -- recommended for batch jobs so the shared model is never used from daemon
+# threads.
+ANALYZE_INLINE = os.getenv("JOURNAL_CLUB_ANALYZE_INLINE", "1") == "1"
+
 # ---------------------------------------------------------------------------
 # Hard-reject terms — papers matching any of these are never relevant
 # ---------------------------------------------------------------------------
@@ -615,6 +622,11 @@ def stream_papers(
                         if not isinstance(p, dict):
                             continue
 
+                        # Stop promptly once requested: don't start work on
+                        # further candidates so the worker can exit cleanly.
+                        if stop_event.is_set():
+                            break
+
                         pkey = _paper_key(p)
 
                         if pkey in _stream_cache:
@@ -641,8 +653,11 @@ def stream_papers(
                             domain=domain,
                         )
 
-                        # Analyze paper inline (blocking call)
-                        ingest_into_analysis(memory, p)
+                        # Analyze paper inline (blocking LLM calls). Skipped
+                        # when a separate analysis step will pick papers up, so
+                        # daemon worker threads never hold the GPU model.
+                        if ANALYZE_INLINE and not stop_event.is_set():
+                            ingest_into_analysis(memory, p)
 
                         if record:
                             _stream_cache.add(pkey)
@@ -815,14 +830,32 @@ def stop_streaming(topic_name: str, domain: str) -> bool:
 
 
 def stop_all_streaming() -> int:
-    """Stop all streaming."""
+    """Stop all streaming and wait for workers to finish cleanly."""
     with _lock:
         events = list(_active_queries.values())
+        threads = list(_active_threads.values())
 
         for ev in events:
             ev.set()
 
-    # Clean up LLM clients to prevent segfaults
+    # Join worker threads BEFORE tearing down the shared LLM client. Freeing a
+    # torch model / CUDA context while a worker is still inside model.generate()
+    # (or letting daemon threads die mid-CUDA-op at interpreter exit) aborts the
+    # process with a native "terminate called without an active exception" core
+    # dump. Workers check the stop event at the top of their loop, so once an
+    # in-flight paper finishes they exit promptly.
+    stop_timeout = float(os.getenv("JOURNAL_CLUB_STREAM_STOP_TIMEOUT", "900"))
+    for t in threads:
+        t.join(timeout=stop_timeout)
+        if t.is_alive():
+            log.warning(
+                "Streaming thread %s still alive after %.0fs stop timeout; "
+                "proceeding with cleanup anyway",
+                t.name,
+                stop_timeout,
+            )
+
+    # Clean up LLM clients to prevent segfaults (safe now that workers joined)
     try:
         cleanup_llm_clients()
     except Exception as e:

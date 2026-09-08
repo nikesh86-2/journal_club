@@ -349,8 +349,8 @@ A: [answer 2]
                 HumanMessage(content=prompt),
             ]
             
-            response = llm_client.invoke(messages)
-            from .paper_analyzer import _get_response_text
+            response = invoke_llm(llm_client, messages)
+            from .paper_analyzer import _get_response_text, invoke_llm
             qa_text = _get_response_text(response)
             
             # Parse QA pairs

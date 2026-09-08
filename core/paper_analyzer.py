@@ -89,6 +89,14 @@ _cached_llm_clients: Dict[str, Any] = {}
 # check -> create -> store and cleanup -> remove.
 _llm_cache_lock = threading.Lock()
 
+# Serializes every LLM invocation (and client teardown). Local HuggingFace
+# pipelines / tokenizers are NOT safe for concurrent model.generate() calls:
+# worker threads (streaming ingest, analyze_batch_parallel) share one client,
+# so parallel invocations interleave shared generation state and return empty
+# or corrupted output. Holding this lock in cleanup_llm_clients also guarantees
+# a model is never freed while another thread is mid-inference.
+_llm_invoke_lock = threading.RLock()
+
 
 _BACKEND_PRIORITY = ("finetuned", "llama_server", "gguf", "local_hf", "openai")
 
@@ -113,28 +121,33 @@ def cleanup_llm_clients(force: bool = False):
         force: If True, clear cache even for external llama-server clients.
                If False (default), preserve external server clients since they don't need cleanup.
     """
-    with _llm_cache_lock:
-        keys_to_remove = []
-        for key, client in _cached_llm_clients.items():
-            # Skip cleanup for external llama-server clients unless forced
-            if not force and isinstance(client, LlamaServerLLM):
-                log.debug(f"Skipping cleanup for external llama-server client: {key}")
-                continue
-                
-            if hasattr(client, 'cleanup'):
-                try:
-                    log.info(f"Cleaning up LLM client: {key}")
-                    client.cleanup()
-                except Exception as e:
-                    log.warning(f"Error cleaning up LLM client {key}: {e}")
-            keys_to_remove.append(key)
-        
-        # Remove only the clients that were cleaned up
-        for key in keys_to_remove:
-            _cached_llm_clients.pop(key, None)
-        
-        log.info("LLM clients cleaned up successfully (%d removed, %d preserved)", 
-                 len(keys_to_remove), len(_cached_llm_clients))
+    # Wait for any in-flight generation to finish before dropping the client.
+    # Dropping it (and thus releasing the torch model/CUDA context) while a
+    # worker thread is still inside model.generate() aborts the process with a
+    # native "terminate called without an active exception" core dump.
+    with _llm_invoke_lock:
+        with _llm_cache_lock:
+            keys_to_remove = []
+            for key, client in _cached_llm_clients.items():
+                # Skip cleanup for external llama-server clients unless forced
+                if not force and isinstance(client, LlamaServerLLM):
+                    log.debug(f"Skipping cleanup for external llama-server client: {key}")
+                    continue
+
+                if hasattr(client, 'cleanup'):
+                    try:
+                        log.info(f"Cleaning up LLM client: {key}")
+                        client.cleanup()
+                    except Exception as e:
+                        log.warning(f"Error cleaning up LLM client {key}: {e}")
+                keys_to_remove.append(key)
+
+            # Remove only the clients that were cleaned up
+            for key in keys_to_remove:
+                _cached_llm_clients.pop(key, None)
+
+            log.info("LLM clients cleaned up successfully (%d removed, %d preserved)",
+                     len(keys_to_remove), len(_cached_llm_clients))
 
 
 # ---------------------------------------------------------------------------
@@ -371,6 +384,90 @@ class GGUFChatLLM:
 
 
 # ---------------------------------------------------------------------------
+# Local HuggingFace model wrapper
+# ---------------------------------------------------------------------------
+
+class LocalHuggingFaceLLM:
+    """Wrapper around a local HuggingFace text-generation pipeline.
+
+    LangChain's HuggingFacePipeline returns the *prompt plus* the generated
+    continuation (return_full_text behaviour). That corrupts stored summaries
+    (they end up containing the whole "System:/Human:" prompt) and makes every
+    JSON parse fail at character 0. This wrapper returns only the newly
+    generated tokens, and applies the tokenizer's chat template when the model
+    has one (e.g. instruct models), so structured outputs can actually parse.
+
+    Concurrency is handled by the module-level _llm_invoke_lock in invoke_llm.
+    """
+
+    def __init__(self, pipeline, tokenizer):
+        self._pipeline = pipeline
+        self._tokenizer = tokenizer
+
+    def _format_messages(self, messages) -> str:
+        """Convert langchain messages into a single prompt string."""
+        chat = []
+        for msg in messages:
+            if isinstance(msg, tuple):
+                role, content = msg
+            else:
+                role = getattr(msg, "type", None) or type(msg).__name__
+                content = msg.content if hasattr(msg, "content") else str(msg)
+
+            # Normalise langchain role names to chat-template roles.
+            role = str(role).lower()
+            role = {
+                "human": "user",
+                "humanmessage": "user",
+                "ai": "assistant",
+                "aimessage": "assistant",
+                "systemmessage": "system",
+            }.get(role, role if role in ("system", "user", "assistant", "tool") else "user")
+            chat.append({"role": role, "content": content})
+
+        # Prefer the model's own chat template (instruct models).
+        try:
+            if getattr(self._tokenizer, "chat_template", None):
+                return self._tokenizer.apply_chat_template(
+                    chat,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                )
+        except Exception as e:
+            log.debug("Chat template formatting failed: %s", e)
+
+        # Fallback: role-labelled text for base (non-chat) models.
+        parts = []
+        for m in chat:
+            label = {
+                "system": "System",
+                "user": "User",
+                "assistant": "Assistant",
+                "tool": "Tool",
+            }.get(m["role"], "User")
+            parts.append(f"{label}: {m['content']}")
+        return "\n\n".join(parts) + "\n\nAssistant: "
+
+    def invoke(self, messages, enable_thinking: bool = False, **kwargs):
+        """Invoke the local pipeline, returning only generated tokens."""
+        prompt = self._format_messages(messages)
+        try:
+            result = self._pipeline(prompt, return_full_text=False)
+        except TypeError:
+            result = self._pipeline(prompt)
+        full = result[0].get("generated_text", "")
+        # Belt and braces: if the pipeline still echoed the prompt, strip it.
+        if full.startswith(prompt):
+            full = full[len(prompt):]
+        return full.strip()
+
+    def cleanup(self):
+        """Release references so the torch model can be garbage collected."""
+        self._pipeline = None
+        self._tokenizer = None
+
+
+# ---------------------------------------------------------------------------
 # Result Caching
 # ---------------------------------------------------------------------------
 
@@ -447,12 +544,74 @@ def invoke_llm(llm, messages, enable_thinking: bool = False):
     tasks and pollute stored output; disable them whenever the client accepts
     an enable_thinking kwarg.
     """
+    # Local HuggingFace pipelines are not thread-safe: only one model.generate()
+    # may run at a time per process, so serialize every call (see
+    # _llm_invoke_lock above).
+    with _llm_invoke_lock:
+        try:
+            if hasattr(llm, 'invoke') and 'enable_thinking' in llm.invoke.__code__.co_varnames:
+                return llm.invoke(messages, enable_thinking=enable_thinking)
+        except Exception:
+            pass
+        return llm.invoke(messages)
+
+
+def _extract_json(text: str):
+    """Best-effort JSON extraction from an LLM response.
+
+    Returns parsed data (dict/list) when the text is pure JSON, wrapped in
+    ```json fences, or contains a JSON object after some prose preamble.
+    Returns None when no parseable JSON is found.
+    """
+    if not text:
+        return None
+
+    text = text.strip()
+
     try:
-        if hasattr(llm, 'invoke') and 'enable_thinking' in llm.invoke.__code__.co_varnames:
-            return llm.invoke(messages, enable_thinking=enable_thinking)
+        return json.loads(text)
     except Exception:
         pass
-    return llm.invoke(messages)
+
+    # Markdown code fences: ```json ... ```
+    fenced = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
+    if fenced:
+        try:
+            return json.loads(fenced.group(1).strip())
+        except Exception:
+            pass
+
+    # Outermost balanced {...} object anywhere in the text.
+    start = text.find("{")
+    while start != -1:
+        depth = 0
+        in_str = False
+        escaped = False
+        for i in range(start, len(text)):
+            ch = text[i]
+            if in_str:
+                if escaped:
+                    escaped = False
+                elif ch == "\\":
+                    escaped = True
+                elif ch == '"':
+                    in_str = False
+                continue
+            if ch == '"':
+                in_str = True
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    candidate = text[start:i + 1]
+                    try:
+                        return json.loads(candidate)
+                    except Exception:
+                        break
+        start = text.find("{", start + 1)
+
+    return None
 
 
 def _parse_json_with_retry(
@@ -475,8 +634,10 @@ def _parse_json_with_retry(
 
     for attempt in range(max_retries):
         try:
-            result = json.loads(current_output)
-            return model_cls(**result)
+            data = _extract_json(current_output)
+            if data is None:
+                raise ValueError("No JSON object found in LLM output")
+            return model_cls(**data)
         except Exception as e:
             log.warning(
                 "JSON parse/validation failed (attempt %d/%d): %s",
@@ -583,7 +744,6 @@ def get_llm_client(use_finetuned: bool = None):
                         torch = None
                     if torch is None:
                         raise RuntimeError("torch is required to load the fine-tuned model")
-                    from langchain_huggingface import HuggingFacePipeline
                     from transformers import (
                         AutoModelForCausalLM,
                         AutoTokenizer,
@@ -626,7 +786,7 @@ def get_llm_client(use_finetuned: bool = None):
                         do_sample=True,
                     )
 
-                    llm = HuggingFacePipeline(pipeline=pipe)
+                    llm = LocalHuggingFaceLLM(pipeline=pipe, tokenizer=tokenizer)
 
                     log.info(
                         "Successfully loaded fine-tuned HuggingFace model"
@@ -716,7 +876,6 @@ def get_llm_client(use_finetuned: bool = None):
         if _backend_enabled("local_hf") and LOCAL_BASE_MODEL_PATH and os.path.exists(LOCAL_BASE_MODEL_PATH):
             try:
                 import torch
-                from langchain_huggingface import HuggingFacePipeline
                 from transformers import (
                     AutoModelForCausalLM,
                     AutoTokenizer,
@@ -1050,7 +1209,11 @@ def get_llm_client(use_finetuned: bool = None):
                     do_sample=True,
                 )
 
-                llm = HuggingFacePipeline(pipeline=pipe)
+                # Use our own wrapper: langchain's HuggingFacePipeline echoes
+                # the prompt (return_full_text), which breaks summaries and all
+                # JSON parsing. The wrapper also applies the tokenizer chat
+                # template for instruct models.
+                llm = LocalHuggingFaceLLM(pipeline=pipe, tokenizer=tokenizer)
 
                 _cached_llm_clients[cache_key] = llm
                 return llm
