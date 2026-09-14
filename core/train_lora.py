@@ -22,7 +22,7 @@ from pathlib import Path
 
 import torch
 import yaml
-from datasets import load_from_disk
+from datasets import DatasetDict, load_from_disk
 from peft import (
     LoraConfig,
     get_peft_model,
@@ -163,6 +163,44 @@ def setup_lora(model: torch.nn.Module, config: dict) -> torch.nn.Module:
 # Dataset
 # ---------------------------------------------------------------------------
 
+def _iter_splits(dataset):
+    """Yield (split_name, Dataset) pairs for a Dataset or DatasetDict."""
+    if isinstance(dataset, DatasetDict):
+        for split in dataset:
+            yield split, dataset[split]
+    else:
+        yield "dataset", dataset
+
+
+def validate_dataset(dataset) -> None:
+    """Fail fast on a malformed dataset before tokenization.
+
+    Without this, a `text` column holding non-strings (e.g. rows stored as
+    ``{"text": ...}`` dicts) surfaces only as an opaque tokenizer error deep
+    inside ``Dataset.map``.
+    """
+    for split, split_dataset in _iter_splits(dataset):
+        if "text" not in split_dataset.column_names:
+            raise ValueError(
+                f"Split '{split}' is missing a 'text' column "
+                f"(found: {split_dataset.column_names})."
+            )
+
+        bad = [
+            i
+            for i, value in enumerate(split_dataset["text"])
+            if not isinstance(value, str)
+        ]
+        if bad:
+            raise ValueError(
+                f"Split '{split}' has {len(bad)} non-string value(s) in the "
+                f"'text' column (first at index {bad[0]}). The dataset at "
+                f"{HF_DATASET_PATH} is malformed; regenerate it with "
+                f"`python training/convert_journal_club_dataset.py`, or delete "
+                f"that directory and rerun the training job."
+            )
+
+
 def load_dataset():
     if not HF_DATASET_PATH.exists():
         raise FileNotFoundError(
@@ -174,7 +212,13 @@ def load_dataset():
 
     dataset = load_from_disk(str(HF_DATASET_PATH))
 
-    log.info("Dataset loaded: %s examples", len(dataset))
+    validate_dataset(dataset)
+
+    split_counts = ", ".join(
+        f"{split}={len(split_dataset)}"
+        for split, split_dataset in _iter_splits(dataset)
+    )
+    log.info("Dataset loaded: %s", split_counts)
 
     return dataset
 

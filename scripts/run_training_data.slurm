@@ -34,9 +34,9 @@ export HF_HOME=/users/fbsnpat/.cache/huggingface
 # Run from the directory the job was submitted from (the repo root).
 cd "${SLURM_SUBMIT_DIR:-$PWD}"
 
-# The dataset is rendered in Qwen ChatML, and inference distils Qwen, so the
-# fine-tune base MUST be the same Qwen2.5-7B-Instruct snapshot. The YAML default
-# is ./mistral-7b (a base model with no chat template), which would produce an
+# The dataset is rendered in Qwen ChatML and inference distils Qwen, so the
+# fine-tune base MUST be the same Qwen2.5-7B-Instruct snapshot. A different
+# model family would tokenise the ChatML markers incorrectly, producing an
 # artifact that is not a drop-in replacement for the analysis backend.
 QWEN_SNAPSHOT=/users/fbsnpat/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28
 if [ ! -f "$QWEN_SNAPSHOT/config.json" ]; then

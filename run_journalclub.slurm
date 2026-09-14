@@ -25,9 +25,8 @@ export HF_HOME=/users/fbsnpat/.cache/huggingface
 
 # ---------------------------------------------------------------------------
 # Model: use the cached instruction-tuned Qwen2.5-7B-Instruct snapshot.
-# The base Mistral-7B in ./mistral-7b has no chat template and cannot follow
-# the "output JSON only" prompts, so every structured call failed and fell
-# back to rule-based analysis. Qwen2.5-7B-Instruct is fully cached offline.
+# It understands the ChatML chat template and can follow the "output JSON only"
+# prompts used by the structured calls, and it is fully cached offline.
 # NOTE: .env also sets JOURNAL_CLUB_LOCAL_BASE_MODEL_PATH to the same path,
 # because run_journal_club.sh re-sources .env and would otherwise override
 # the export below.

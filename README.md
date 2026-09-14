@@ -303,11 +303,19 @@ JOURNAL_CLUB_FINETUNED_MODEL_PATH=training/journal_club_merged_model
 ### Training Configuration
 
 Training hyperparameters are configured in `training/journal_club_training_config.yaml`:
-- Base model: User configured, or mistral 7B
-- LoRA rank: 16, alpha: 32, dropout: 0.1
-- Training epochs: 2 (literature domain)
-- Learning rate: 1.5e-5
+- Base model: Qwen2.5-7B-Instruct (see caveat below); override with `JOURNAL_CLUB_BASE_MODEL`
+- LoRA rank: 32, alpha: 64, dropout: 0.05
+- Training epochs: 3
+- Learning rate: 2e-5
 - Target modules: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
+
+> **Base/student model caveat.** The training data is rendered with Qwen ChatML
+> markers (`<|im_start|>`/`<|im_end|>`) and inference distils
+> Qwen2.5-7B-Instruct, so the fine-tuning base **must** be a Qwen2.5-Instruct
+> (ChatML) model — a different model family tokenises those markers as ordinary
+> text and yields an artifact that is not a drop-in replacement for the analysis
+> backend. Leave `student_model_name` empty to fine-tune the base directly; if
+> you set it, it must share the same Qwen tokenizer.
 
 ## Running on an HPC cluster
 

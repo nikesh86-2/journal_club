@@ -80,7 +80,7 @@ test_texts = [d['text'] for d in test_data]
 
 dataset = DatasetDict({
     'train': Dataset.from_dict({'text': train_texts}),
-    'test': Dataset.from_dict({'text': test_data})
+    'test': Dataset.from_dict({'text': test_texts})
 })
 dataset.save_to_disk(str(data_dir / 'hf_disk'))
 print('Saved HF dataset to', data_dir / 'hf_disk')

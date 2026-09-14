@@ -1,11 +1,16 @@
 # Journal Club LoRA Fine-Tuning Configuration
 
-# Base model (env-overridable: JOURNAL_CLUB_BASE_MODEL)
-model_name: ${JOURNAL_CLUB_BASE_MODEL:-./mistral-7b}
+# Base model (env-overridable: JOURNAL_CLUB_BASE_MODEL).
+# MUST be a Qwen2.5-Instruct model: the training data is rendered in Qwen ChatML
+# (<|im_start|>/<|im_end|>) and inference distils Qwen, so a different model
+# family would tokenise the ChatML markers incorrectly and would not be a
+# drop-in replacement for the analysis backend.
+model_name: ${JOURNAL_CLUB_BASE_MODEL:-/users/fbsnpat/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28}
 
-# Student model for fine-tuning (env-overridable: JOURNAL_CLUB_STUDENT_MODEL)
-# Leave empty to use base model directly. Set to a smaller model path for VRAM efficiency.
-# Example: student_model_name: ./mistral-7b
+# Student model for fine-tuning (env-overridable: JOURNAL_CLUB_STUDENT_MODEL).
+# Leave empty to fine-tune the base model directly (recommended for VRAM-limited
+# GPUs). If set, it MUST share the base model's Qwen ChatML tokenizer, otherwise
+# the ChatML markers in the training data tokenise incorrectly.
 student_model_name: ${JOURNAL_CLUB_STUDENT_MODEL:-}
 
 # Output directories
