@@ -7,6 +7,12 @@ topics:
   - RNA protein binding interface
   - RNA-protein complex structure
   - RNA recognition motifs
+  - RBP structure
+  - RNA binding domain
+  - ribonucleoprotein complex
+  - RNA-protein crystal structure
+  - RNA recognition motif structure
+  - ribonucleoprotein assembly
   domain_terms:
     target_classes:
     - rna-binding
@@ -14,6 +20,25 @@ topics:
     - rna-protein
     - rrm
     - kh domain
+    - rnp
+    - rna-binding protein
+    - rna recognition
+    - rna granule
+    - stress granule
+    - rna metabolism
+    - rna processing
+    - rna transport
+    - rna localization
+    - rna stability
+    - rna decay
+    - rna modification
+    - rna editing
+    - rna splicing
+    - rna translation
+    - ribosome
+    - translation factor
+    - rna helicase
+    - rna chaperone
     motif_terms:
     - stem-loop
     - hairpin
@@ -46,6 +71,28 @@ topics:
     - nucleocapsid
     - coat protein
     - nucleoprotein
+    - virus assembly
+    - virion
+    - viral particle
+    - virus structure
+    - capsid protein
+    - core protein
+    - matrix protein
+    - gag
+    - gag-pol
+    - protease
+    - reverse transcriptase
+    - integrase
+    - packaging
+    - encapsidation
+    - genome packaging
+    - rna packaging
+    - dna packaging
+    - virus maturation
+    - virus budding
+    - virus release
+    - structural protein
+    - viral morphogenesis
     motif_terms:
     - stem-loop
     - packaging signal
@@ -61,8 +108,42 @@ topics:
   time_window_months: 0
   seed_queries:
   - Plastic degrading enzymes
+  - plastic degradation enzyme
+  - PET hydrolase
+  - biodegradation polymer
+  - microbial plastic degradation
+  - plasticase enzyme
+  - polyester degradation
+  - bioplastic degradation
   domain_terms:
     target_classes:
-    - Enzymology
+    - enzyme
+    - enzymology
+    - biodegradation
+    - plastic degradation
+    - plastic-degrading
+    - plasticase
+    - hydrolase
+    - esterase
+    - lipase
+    - cutinase
+    - PETase
+    - MHETase
+    - polyester
+    - polyethylene
+    - polypropylene
+    - polystyrene
+    - polyurethane
+    - bioplastic
+    - biopolymer
+    - depolymerization
+    - degradation
+    - biodegradable
+    - compostable
+    - plastic waste
+    - plastic recycling
+    - microbial degradation
+    - bacterial degradation
+    - fungal degradation
     motif_terms: []
     avoid_terms: []

@@ -38,7 +38,7 @@ mkdir -p bot/journal_club/logs
 mkdir -p results/analysis
 
 echo "Running analyzer worker (CPU offload enabled)"
-python3 scripts/analyzer_worker.py --memory-file cache/journal_club_memory.db --output-dir results/analysis
+python3 scripts/analyzer_worker.py --memory-file literature_memory.db --output-dir results/analysis
 
 echo "Analyzer worker finished"
 date

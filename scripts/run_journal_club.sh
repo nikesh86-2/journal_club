@@ -23,7 +23,7 @@ fi
 export JOURNAL_CLUB_FAISS_INDEX_PATH="${JOURNAL_CLUB_FAISS_INDEX_PATH:-cache/faiss_index}"
 export JOURNAL_CLUB_TIME_WINDOW_MONTHS="${JOURNAL_CLUB_TIME_WINDOW_MONTHS:-0}"
 export JOURNAL_CLUB_WEB_PORT="${JOURNAL_CLUB_WEB_PORT:-5000}"
-export JOURNAL_CLUB_LITERATURE_MEMORY_PATH="${JOURNAL_CLUB_LITERATURE_MEMORY_PATH:-cache/journal_club_memory.db}"
+export JOURNAL_CLUB_LITERATURE_MEMORY_PATH="${JOURNAL_CLUB_LITERATURE_MEMORY_PATH:-literature_memory.db}"
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
@@ -142,8 +142,14 @@ check_and_trigger_training()
 collect_training_data() {
     echo "Collecting training data from literature memory..."
     python3 -c "
-import sys
+import sys, logging
 sys.path.insert(0, '.')
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+)
+
 from core.training_data_collector import collect_training_data_from_memory
 
 count = collect_training_data_from_memory()

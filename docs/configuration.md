@@ -17,7 +17,7 @@ Copy `.env.example` to `.env` and edit. The full list:
 ### Paths
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `JOURNAL_CLUB_LITERATURE_MEMORY_PATH` | `cache/journal_club_memory.db` | Memory database (a legacy `.json` path is migrated automatically) |
+| `JOURNAL_CLUB_LITERATURE_MEMORY_PATH` | `literature_memory.db` | Memory database (a legacy `.json` path is migrated automatically) |
 | `JOURNAL_CLUB_FAISS_INDEX_PATH` | `cache/faiss_index` | FAISS index directory |
 | `JOURNAL_CLUB_WEB_PORT` | `5000` | Flask port |
 | `JOURNAL_CLUB_FINETUNED_MODEL_PATH` | `training/journal_club_merged_model` | Merged LoRA model |
@@ -95,7 +95,7 @@ epochs/LR, eval strategy, sequence length). Model paths support
 ## Path resolution
 
 - The memory path comes from `core.config.DEFAULT_MEMORY_PATH`
-  (`JOURNAL_CLUB_LITERATURE_MEMORY_PATH` or `cache/journal_club_memory.db`).
+  (`JOURNAL_CLUB_LITERATURE_MEMORY_PATH` or `literature_memory.db`).
 - The FAISS path comes from `core.config.DEFAULT_FAISS_INDEX_PATH`
   (`JOURNAL_CLUB_FAISS_INDEX_PATH` or `cache/faiss_index`).
 - Passing a legacy `*.json` path to `JournalClubMemory` resolves to a

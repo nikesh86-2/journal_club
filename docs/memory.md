@@ -6,7 +6,7 @@ unchanged so callers (streaming, analysis, web) work transparently.
 
 ## Database
 
-Default path: `cache/journal_club_memory.db`
+Default path: `literature_memory.db`
 (override with `JOURNAL_CLUB_LITERATURE_MEMORY_PATH`).
 
 ### Schema

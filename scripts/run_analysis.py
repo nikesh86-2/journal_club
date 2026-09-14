@@ -25,8 +25,8 @@ def main():
     parser.add_argument(
         "--limit",
         type=int,
-        default=50,
-        help="Max papers per topic (default: 50)",
+        default=None,
+        help="Max papers per topic (default: no limit)",
     )
     args = parser.parse_args()
 
@@ -35,8 +35,16 @@ def main():
     print(f'Total papers in memory: {stats.get("total_papers", 0)}')
 
     for topic in stats['by_topic'].keys():
-        papers = memory.filter_papers(topic=topic, limit=args.limit)
-        to_analyze = papers if args.all else [p for p in papers if not p.get('summary')]
+        if args.all:
+            papers = memory.filter_papers(topic=topic, limit=args.limit)
+            to_analyze = papers
+        else:
+            # First get all papers without summaries, then apply limit
+            all_unanalyzed = memory.filter_papers(topic=topic)
+            to_analyze = [p for p in all_unanalyzed if not p.get('summary')]
+            if args.limit:
+                to_analyze = to_analyze[:args.limit]
+
         if not to_analyze:
             print(f'No papers to analyze for topic: {topic}')
             continue
@@ -52,6 +60,13 @@ def main():
 
         print(f'Analyzing {len(to_analyze)} papers for topic: {topic} (domain: {domain})')
         results = analyze_batch(to_analyze, domain=domain, memory=memory)
+        # analyze_batch must return one result per paper, in input order. If this
+        # ever drifts, zip() would silently attach analyses to the wrong papers.
+        if len(results) != len(to_analyze):
+            raise RuntimeError(
+                f'Analysis returned {len(results)} results for {len(to_analyze)} papers; '
+                'refusing to write mismatched analyses.'
+            )
         for paper, result in zip(to_analyze, results):
             # Update memory with analysis
             key = paper.get('doi') or paper.get('pmid') or paper.get('title')

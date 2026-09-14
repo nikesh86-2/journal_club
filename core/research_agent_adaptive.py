@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import requests
 from Bio import Entrez
@@ -34,6 +34,12 @@ headers = {
 }
 
 _semantic_cache = {}
+
+# Loaded FAISS stores, keyed by (absolute path, index mtime). Unpickling the
+# docstore is expensive, so reuse it across queries; rebuilding the index changes
+# the mtime and invalidates the entry.
+_faiss_store_cache: Dict[tuple, Any] = {}
+_faiss_store_lock = threading.Lock()
 
 
 def cached_semantic_search(query, limit):
@@ -77,6 +83,42 @@ class CachedSentenceTransformerEmbeddings(Embeddings):
         return self.model.encode([text], convert_to_numpy=True)[0].tolist()
 
 
+def get_faiss_store(index_path: str | None = None) -> "Any":
+    """Return a cached FAISS store for ``index_path`` (loaded at most once).
+
+    Loading the index (unpickling the docstore) is expensive, so the store is
+    reused across queries and keyed by index mtime. Returns ``None`` when the
+    index is missing.
+    """
+    from langchain_community.vectorstores import FAISS
+
+    path = index_path or _faiss_index_path()
+    if not path or not os.path.exists(path):
+        return None
+
+    index_file = os.path.join(path, "index.faiss")
+    try:
+        mtime = os.path.getmtime(index_file)
+    except OSError:
+        mtime = None
+    key = (os.path.abspath(path), mtime)
+
+    with _faiss_store_lock:
+        cached = _faiss_store_cache.get(key)
+        if cached is not None:
+            return cached
+
+        embeddings = CachedSentenceTransformerEmbeddings()
+        db = FAISS.load_local(
+            path,
+            embeddings,
+            allow_dangerous_deserialization=True,
+        )
+        _faiss_store_cache.clear()
+        _faiss_store_cache[key] = db
+        return db
+
+
 _last_call_time = 0
 _lock = threading.Lock()
 MIN_INTERVAL = 1.0
@@ -107,19 +149,9 @@ def _faiss_index_path() -> str:
 
 def search_local_db(query: str) -> List:
     try:
-        from langchain_community.vectorstores import FAISS
-
-        index_path = _faiss_index_path()
-
-        if not os.path.exists(index_path):
+        db = get_faiss_store()
+        if db is None:
             return []
-
-        embeddings = CachedSentenceTransformerEmbeddings()
-        db = FAISS.load_local(
-            index_path,
-            embeddings,
-            allow_dangerous_deserialization=True,
-        )
         return db.similarity_search(query, k=10)
 
     except Exception as e:

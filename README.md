@@ -77,7 +77,7 @@ JOURNAL_CLUB_MAX_MEMORY_PAPERS=1000  # Max unique papers stored in memory before
 JOURNAL_CLUB_WEB_PORT=5000
 JOURNAL_CLUB_LLM_MODEL=gpt-4
 JOURNAL_CLUB_LLM_BACKEND=auto  # auto | finetuned | llama_server | gguf | local_hf | openai
-JOURNAL_CLUB_LITERATURE_MEMORY_PATH=cache/journal_club_memory.db
+JOURNAL_CLUB_LITERATURE_MEMORY_PATH=literature_memory.db
 
 # Embeddings (used for FAISS indexing and semantic search)
 JOURNAL_CLUB_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
@@ -205,7 +205,7 @@ Generated in `output/json/`:
 
 ### Literature Memory
 
-Persistent storage in a SQLite database (`cache/journal_club_memory.db` by
+Persistent storage in a SQLite database (`literature_memory.db` by
 default) with:
 - Paper metadata and analysis results
 - Gap analysis and quality scores

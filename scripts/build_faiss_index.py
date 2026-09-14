@@ -43,7 +43,7 @@ def load_papers_from_memory(memory_path: Path) -> List[dict]:
 def papers_to_documents(papers: List[dict]) -> List[Document]:
     """Convert papers to LangChain documents."""
     documents = []
-    
+
     for paper in papers:
         title = paper.get("title", "")
         abstract = paper.get("abstract", "")
@@ -51,13 +51,13 @@ def papers_to_documents(papers: List[dict]) -> List[Document]:
         year = paper.get("year", "")
         topic = paper.get("topic_name", "")
         domain = paper.get("domain", "")
-        
+
         if not title or not abstract:
             continue
-        
+
         # Create document content
         content = f"{title}\n{abstract}"
-        
+
         # Create document with metadata
         doc = Document(
             page_content=content,
@@ -68,11 +68,11 @@ def papers_to_documents(papers: List[dict]) -> List[Document]:
                 "year": year,
                 "topic": topic,
                 "domain": domain,
-                "source": "journal_club_memory",
+                "source": "literature_memory",
             }
         )
         documents.append(doc)
-    
+
     log.info(f"Converted {len(documents)} papers to documents")
     return documents
 
@@ -82,19 +82,19 @@ def build_faiss_index(documents: List[Document], index_path: Path) -> None:
     if not documents:
         log.error("No documents to index")
         return
-    
+
     log.info(f"Building FAISS index at {index_path}")
-    
+
     # Create embeddings
     embeddings = CachedSentenceTransformerEmbeddings()
-    
+
     # Create FAISS index
     db = FAISS.from_documents(documents, embeddings)
-    
+
     # Save index
     index_path.parent.mkdir(parents=True, exist_ok=True)
     db.save_local(str(index_path))
-    
+
     log.info(f"FAISS index saved to {index_path}")
 
 
@@ -104,24 +104,24 @@ def main():
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    
+
     log.info("=== Building FAISS Index ===")
-    
+
     # Load papers
     papers = load_papers_from_memory(MEMORY_PATH)
     if not papers:
         log.error("No papers found in memory")
         return
-    
+
     # Convert to documents
     documents = papers_to_documents(papers)
     if not documents:
         log.error("No documents created from papers")
         return
-    
+
     # Build FAISS index
     build_faiss_index(documents, FAISS_INDEX_PATH)
-    
+
     log.info("=== FAISS Index Build Complete ===")
 
 

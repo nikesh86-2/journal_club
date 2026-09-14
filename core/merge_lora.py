@@ -70,9 +70,11 @@ def merge_lora_adapter() -> None:
 
     # Load configuration
     config = load_config()
-    # Use student model if configured, otherwise use base model
-    base_model_name = config.get("student_model_name", config["model_name"])
-    is_student_model = "student_model_name" in config
+    # Use student model if configured, otherwise use base model.
+    # Treat an empty placeholder as "not configured" rather than a path.
+    student_model_name = config.get("student_model_name") or None
+    base_model_name = student_model_name or config["model_name"]
+    is_student_model = student_model_name is not None
 
     log.info(f"Base model: {base_model_name}")
     if is_student_model:

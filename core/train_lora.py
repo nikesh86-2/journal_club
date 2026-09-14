@@ -81,9 +81,12 @@ def setup_logging() -> None:
 # ---------------------------------------------------------------------------
 def load_model_and_tokenizer(config: dict):
     """Load model for LoRA/QLoRA training with 4-bit quantization."""
-    # Use student model if configured, otherwise use base model
-    model_name = config.get("student_model_name", config["model_name"])
-    is_student_model = "student_model_name" in config
+    # Use student model if configured, otherwise use base model.
+    # `student_model_name` is usually an empty placeholder in the YAML, so
+    # treat a falsy value as "not configured" instead of passing it as a path.
+    student_model_name = config.get("student_model_name") or None
+    model_name = student_model_name or config["model_name"]
+    is_student_model = student_model_name is not None
 
     log.info(f"Loading model: {model_name}")
     if is_student_model:

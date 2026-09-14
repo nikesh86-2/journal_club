@@ -5,7 +5,7 @@ and runs analysis over papers stored in the memory cache. This isolates model
 loading from the streaming threads to avoid OOM kills.
 
 Usage:
-    python3 scripts/analyzer_worker.py [--memory-file cache/journal_club_memory.json] [--output-dir results/analysis]
+    python3 scripts/analyzer_worker.py [--memory-file literature_memory.json] [--output-dir results/analysis]
 
 The script will process every paper in the memory file and write per-paper
 JSON results to the output directory.
@@ -58,7 +58,7 @@ def main():
     parser.add_argument(
         "--memory-file",
         default=None,
-        help="Path to the memory database (default: JOURNAL_CLUB_LITERATURE_MEMORY_PATH or cache/journal_club_memory.db)",
+        help="Path to the memory database (default: JOURNAL_CLUB_LITERATURE_MEMORY_PATH or literature_memory.db)",
     )
     parser.add_argument("--output-dir", default="results/analysis")
     args = parser.parse_args()

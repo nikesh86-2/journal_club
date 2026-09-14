@@ -117,7 +117,7 @@ def _format_paper_section(paper: Dict[str, Any], index: int) -> List[str]:
         ])
 
     # Gap analysis
-    gap_analysis = paper.get("gap_analysis", {})
+    gap_analysis = paper.get("gap_analysis") or {}
     if any(gap_analysis.values()):
         lines.extend([
             f"#### Gap Analysis",
@@ -132,7 +132,7 @@ def _format_paper_section(paper: Dict[str, Any], index: int) -> List[str]:
                 lines.append("")
 
     # Quality scores
-    quality_scores = paper.get("quality_scores", {})
+    quality_scores = paper.get("quality_scores") or {}
     if quality_scores and any(v is not None for v in quality_scores.values()):
         lines.extend([
             f"#### Quality Scores",
@@ -252,7 +252,7 @@ def generate_paper_report(
         ])
 
     # Gap analysis
-    gap_analysis = paper.get("gap_analysis", {})
+    gap_analysis = paper.get("gap_analysis") or {}
     if any(gap_analysis.values()):
         report_lines.extend([
             f"## Gap Analysis",
@@ -267,7 +267,7 @@ def generate_paper_report(
                 report_lines.append("")
 
     # Quality scores
-    quality_scores = paper.get("quality_scores", {})
+    quality_scores = paper.get("quality_scores") or {}
     if quality_scores and any(v is not None for v in quality_scores.values()):
         report_lines.extend([
             f"## Quality Scores",

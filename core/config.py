@@ -14,14 +14,18 @@ from pathlib import Path
 _CACHE_DIR = Path(__file__).resolve().parent.parent / "cache"
 CACHE_DIR = _CACHE_DIR
 
+# Repo root directory
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
 # Default settings
 DEFAULT_TOPICS = []
 DEFAULT_DOMAIN = "general"
 
 # Single source of truth for the memory path.
+# Default to literature_memory.db at repo root for unified location.
 DEFAULT_MEMORY_PATH = os.getenv(
     "JOURNAL_CLUB_LITERATURE_MEMORY_PATH",
-    str(_CACHE_DIR / "journal_club_memory.db"),
+    str(_REPO_ROOT / "literature_memory.db"),
 )
 
 # Default FAISS index path.

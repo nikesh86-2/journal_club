@@ -6,7 +6,7 @@ model_name: ${JOURNAL_CLUB_BASE_MODEL:-./mistral-7b}
 # Student model for fine-tuning (env-overridable: JOURNAL_CLUB_STUDENT_MODEL)
 # Leave empty to use base model directly. Set to a smaller model path for VRAM efficiency.
 # Example: student_model_name: ./mistral-7b
-student_model_name:
+student_model_name: ${JOURNAL_CLUB_STUDENT_MODEL:-}
 
 # Output directories
 output_dir: training/journal_club_output

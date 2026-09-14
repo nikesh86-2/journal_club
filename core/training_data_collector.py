@@ -17,20 +17,27 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
 log = logging.getLogger("journal_club.training")
 
+# Matches a reasoning scratchpad, including an unterminated one (an unclosed
+# <think> runs to the end of the text). Mirrors paper_analyzer._THINK_BLOCK_RE.
+_THINK_RE = re.compile(r"<think>.*?(?:</think>|$)", re.DOTALL)
+
 
 def _clean_text(text: str | None) -> str:
-    """Clean text by stripping reasoning scratchpads (<think> tags) and excess whitespace."""
+    """Clean text by stripping reasoning scratchpads (<think> tags) and excess whitespace.
+
+    Returns "" when the input was reasoning only, so callers skip the example
+    instead of training on a leaked scratchpad.
+    """
     if not text:
         return ""
-    import re
-    cleaned = re.sub(r"<think>.*?</think>", "", str(text), flags=re.DOTALL).strip()
-    return cleaned if cleaned else str(text).strip()
+    return _THINK_RE.sub("", str(text)).strip()
 
 
 class TrainingDataCollector:
@@ -76,7 +83,7 @@ class TrainingDataCollector:
                 "topic": paper.get("topic_name"),
                 "domain": paper.get("domain"),
                 "paper_doi": paper.get("doi"),
-                "quality_score": paper.get("quality_scores", {}).get("overall_quality"),
+                "quality_score": (paper.get("quality_scores") or {}).get("overall_quality"),
             }
         }
         
@@ -129,7 +136,7 @@ class TrainingDataCollector:
         title = paper.get("title", "")
         abstract = paper.get("abstract", "")
         critique = _clean_text(paper.get("critique"))
-        gap_analysis = paper.get("gap_analysis", {})
+        gap_analysis = paper.get("gap_analysis") or {}
         
         if not title or not abstract or not critique:
             return None
@@ -172,7 +179,7 @@ class TrainingDataCollector:
         title = paper.get("title", "")
         abstract = paper.get("abstract", "")
         quality_scores = paper.get("quality_scores")
-        gap_analysis = paper.get("gap_analysis", {})
+        gap_analysis = paper.get("gap_analysis") or {}
         
         if not title or not abstract or not quality_scores:
             return None
@@ -343,14 +350,14 @@ A: [answer 2]
         
         try:
             from langchain_core.messages import HumanMessage, SystemMessage
-            
+            from .paper_analyzer import _get_response_text, invoke_llm
+
             messages = [
                 SystemMessage(content="You are an expert at generating relevant questions and answers about scientific research papers."),
                 HumanMessage(content=prompt),
             ]
-            
+
             response = invoke_llm(llm_client, messages)
-            from .paper_analyzer import _get_response_text, invoke_llm
             qa_text = _get_response_text(response)
             
             # Parse QA pairs
@@ -472,7 +479,7 @@ def collect_training_data_from_memory(
         # Filter by quality score if available
         high_quality_papers = [
             p for p in papers
-            if p.get("quality_scores", {}).get("overall_quality", 0) >= min_quality_score
+            if (p.get("quality_scores") or {}).get("overall_quality", 0) >= min_quality_score
         ]
         
         if not high_quality_papers:

@@ -297,8 +297,7 @@ def recommend_related_from_faiss(
             log.warning("FAISS index not found at %s", faiss_index_path)
             return []
 
-        query_text = f"{paper.get('title', '') or ''}
-{paper.get('abstract', '') or ''}"
+        query_text = f"{paper.get('title', '') or ''}\n{paper.get('abstract', '') or ''}"
 
         # Search
         results = db.similarity_search_with_score(query_text, k=top_k + 10)

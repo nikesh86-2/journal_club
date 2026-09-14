@@ -194,7 +194,10 @@ def api_trigger_analysis():
         stats = memory.get_statistics()
         analyzed_count = 0
         for topic in stats['by_topic'].keys():
-            papers = memory.filter_papers(topic=topic, limit=20)
+            # Fetch every paper for the topic, then keep the unanalyzed ones.
+            # (Previously this capped at the 20 oldest *before* filtering, so it
+            # could never reach unanalyzed papers past the cap.)
+            papers = memory.filter_papers(topic=topic)
             unanalyzed = [p for p in papers if not p.get('summary')]
             if not unanalyzed:
                 continue
@@ -202,6 +205,11 @@ def api_trigger_analysis():
             topic_domain = topic_conf.get("domain", "general") if topic_conf else "general"
             # analyze_batch returns one analysis dict per input paper, in order
             results = analyze_batch(unanalyzed, topic_domain, memory=memory)
+            if len(results) != len(unanalyzed):
+                raise RuntimeError(
+                    f'Analysis returned {len(results)} results for {len(unanalyzed)} '
+                    'papers; refusing to write mismatched analyses.'
+                )
             for paper, result in zip(unanalyzed, results):
                 key = paper.get('doi') or paper.get('pmid') or paper.get('title')
                 memory.update_paper_analysis(

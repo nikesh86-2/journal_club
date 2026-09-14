@@ -1,5 +1,6 @@
 import subprocess
 import os
+import sys
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -47,7 +48,7 @@ def convert_to_hf_dataset():
         return False
     
     try:
-        subprocess.run(["python", str(convert_script)], check=True)
+        subprocess.run([sys.executable, str(convert_script)], check=True)
         log.info("Dataset conversion completed")
         return True
     except subprocess.CalledProcessError as e:
@@ -63,7 +64,7 @@ def trigger_training():
         return False
     
     try:
-        subprocess.run(["python", str(train_script)], check=True)
+        subprocess.run([sys.executable, str(train_script)], check=True)
         log.info("Training completed")
         return True
     except subprocess.CalledProcessError as e:
@@ -79,7 +80,7 @@ def merge_lora_weights():
         return False
     
     try:
-        subprocess.run(["python", str(merge_script)], check=True)
+        subprocess.run([sys.executable, str(merge_script)], check=True)
         log.info("Model merge completed")
         return True
     except subprocess.CalledProcessError as e:

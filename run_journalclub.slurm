@@ -2,7 +2,7 @@
 #SBATCH --job-name=journal_club
 #SBATCH --output=journal_club_%j.out
 #SBATCH --error=journal_club_%j.err
-#SBATCH --time=08:00:00
+#SBATCH --time=10:00:00
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
@@ -46,10 +46,15 @@ export JOURNAL_CLUB_LLM_BACKEND=local_hf
 # ingested during streaming and analysed afterwards in the dedicated analysis
 # step, which runs in a single foreground process and exits cleanly.
 export JOURNAL_CLUB_ANALYZE_INLINE=0
-export JOURNAL_CLUB_STREAM_CYCLES=3
-export JOURNAL_CLUB_STREAM_INTERVAL=30
+export JOURNAL_CLUB_STREAM_CYCLES=50
+export JOURNAL_CLUB_STREAM_INTERVAL=120
 # Sync delay between streaming and analysis to let DB writes flush
 export JOURNAL_CLUB_STREAM_SYNC_DELAY=5
+
+# Ensure inline Python (Steps 0/2/6) uses the same DB as the shell scripts
+# which source .env. Without this, JournalClubMemory() falls back to the
+# default literature_memory.db — a completely separate database.
+export JOURNAL_CLUB_LITERATURE_MEMORY_PATH=literature_memory.db
 
 # Older runs cached prompt-echo / rule-fallback "analyses". Wipe the cache so
 # every paper gets a fresh LLM analysis this run; the cache stays enabled

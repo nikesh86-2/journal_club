@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import threading
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Set
@@ -430,9 +431,14 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
     import urllib.request
     import urllib.parse
     import json
+    import urllib.error
 
     results = []
     max_pages = 5
+    max_retries = 3
+    base_delay = 1.0  # seconds
+    rate_limit_delay = 0.5  # seconds between requests
+
     try:
         # Build date filter
         date_filter = ""
@@ -444,8 +450,8 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
             date_filter = f' AND (FIRST_PDATE:[{since_date} TO *])'
         # else: no date filter (fetch all)
 
-        # SRC:PPR filters to preprints (bioRxiv, medRxiv, etc.)
-        search_query = f"({query}){date_filter} AND SRC:PPR"
+        # Removed SRC:PPR filter to include published papers, not just preprints
+        search_query = f"({query}){date_filter}"
 
         page = 1
         while len(results) < limit and page <= max_pages:
@@ -459,9 +465,38 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
             })
             url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/search?{params}"
 
-            req = urllib.request.Request(url, headers={"User-Agent": "JournalClubPipeline/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
+            # Retry logic with exponential backoff
+            retry_count = 0
+            last_error = None
+            while retry_count < max_retries:
+                try:
+                    # Rate limiting: sleep before request (except first request)
+                    if page > 1 or retry_count > 0:
+                        time.sleep(rate_limit_delay)
+
+                    req = urllib.request.Request(url, headers={"User-Agent": "JournalClubPipeline/1.0"})
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        data = json.loads(resp.read().decode("utf-8"))
+                    break  # Success, exit retry loop
+                except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
+                    last_error = e
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        delay = base_delay * (2 ** retry_count)  # Exponential backoff
+                        log.warning("Europe PMC request failed (attempt %d/%d), retrying in %.1fs: %s",
+                                   retry_count, max_retries, delay, e)
+                        time.sleep(delay)
+                    else:
+                        log.warning("Europe PMC request failed after %d retries: %s", max_retries, e)
+                        raise
+                except Exception as e:
+                    last_error = e
+                    log.warning("Europe PMC request failed with unexpected error: %s", e)
+                    raise
+
+            if last_error and retry_count >= max_retries:
+                log.warning("Europe PMC search failed for query '%s' after retries: %s", query, last_error)
+                break
 
             items = data.get("resultList", {}).get("result", [])
             if not items:
@@ -501,6 +536,202 @@ def fetch_europepmc_papers(query: str, limit: int = 25, time_window_months: int 
         log.warning("Europe PMC search failed for query '%s': %s", query, e)
 
     return results
+
+
+def fetch_pubmed_papers(query: str, limit: int = 25, time_window_months: int = 240, since_date: str | None = None) -> List[dict]:
+    """Fetch papers from PubMed using Entrez ESearch/EFetch.
+
+    PubMed provides access to MEDLINE and other life science literature.
+    Results are sorted by publication date (newest first). When the
+    time window is unlimited (<= 0), the request pages through results so
+    older literature is not missed (capped at 500 results).
+    If since_date is provided (YYYY-MM-DD), only papers with
+    publication date >= since_date are fetched.
+    """
+    from Bio import Entrez
+    import time
+
+    results = []
+    max_retries = 3
+    base_delay = 1.0
+    rate_limit_delay = 0.34  # PubMed requires 3 requests per second max
+
+    try:
+        # Set Entrez email if not already set
+        if not Entrez.email:
+            Entrez.email = os.getenv("ENTREZ_EMAIL", "journal.club@example.com")
+
+        # Build date filter for ESearch
+        date_filter = ""
+        if time_window_months > 0:
+            cutoff = datetime.utcnow() - timedelta(days=time_window_months * 30)
+            date_filter = f' AND ("{cutoff.strftime("%Y/%m/%d")}":"3000"[Date - Publication])'
+        elif time_window_months <= 0 and since_date is not None:
+            # Since date provided: fetch papers with publication date >= since_date
+            date_filter = f' AND ("{since_date}":"3000"[Date - Publication])'
+        # else: no date filter (fetch all)
+
+        search_query = f"({query}){date_filter}"
+
+        # Use ESearch to get PMIDs
+        retry_count = 0
+        last_error = None
+        pmids = []
+
+        while retry_count < max_retries:
+            try:
+                # Rate limiting
+                time.sleep(rate_limit_delay)
+
+                search_handle = Entrez.esearch(
+                    db="pubmed",
+                    term=search_query,
+                    retmax=str(min(limit, 500)),
+                    sort="Date",
+                    retmode="xml"
+                )
+                search_record = Entrez.read(search_handle)
+                search_handle.close()
+
+                pmids = search_record.get("IdList", [])
+                break  # Success
+
+            except Exception as e:
+                last_error = e
+                retry_count += 1
+                if retry_count < max_retries:
+                    delay = base_delay * (2 ** retry_count)
+                    log.warning("PubMed ESearch failed (attempt %d/%d), retrying in %.1fs: %s",
+                               retry_count, max_retries, delay, e)
+                    time.sleep(delay)
+                else:
+                    log.warning("PubMed ESearch failed after %d retries: %s", max_retries, e)
+
+        if not pmids:
+            return results
+
+        # Batch fetch papers using EFetch
+        batch_size = 100
+        for i in range(0, len(pmids), batch_size):
+            batch_pmids = pmids[i:i + batch_size]
+
+            retry_count = 0
+            last_error = None
+
+            while retry_count < max_retries:
+                try:
+                    # Rate limiting
+                    time.sleep(rate_limit_delay)
+
+                    fetch_handle = Entrez.efetch(
+                        db="pubmed",
+                        id=",".join(batch_pmids),
+                        rettype="medline",
+                        retmode="xml"
+                    )
+                    fetch_record = Entrez.read(fetch_handle)
+                    fetch_handle.close()
+
+                    articles = fetch_record.get("PubmedArticle", [])
+                    for article in articles:
+                        medline = article.get("MedlineCitation", {})
+                        pubmed_data = article.get("PubmedData", {})
+
+                        pmid = medline.get("PMID", "")
+                        article_data = medline.get("Article", {})
+
+                        # Extract title
+                        title = ""
+                        if article_data:
+                            title = article_data.get("ArticleTitle", "")
+
+                        # Extract abstract
+                        abstract = ""
+                        abstract_data = article_data.get("Abstract", {})
+                        if abstract_data:
+                            abstract_text = abstract_data.get("AbstractText", [])
+                            if isinstance(abstract_text, list):
+                                abstract = " ".join(str(t) for t in abstract_text)
+                            else:
+                                abstract = str(abstract_text)
+
+                        # Extract authors
+                        authors = []
+                        author_list = article_data.get("AuthorList", [])
+                        if author_list:
+                            for author in author_list:
+                                if isinstance(author, dict):
+                                    last_name = author.get("LastName", "")
+                                    fore_name = author.get("ForeName", "")
+                                    if last_name and fore_name:
+                                        authors.append(f"{fore_name} {last_name}")
+                                    elif last_name:
+                                        authors.append(last_name)
+
+                        # Extract publication date
+                        pub_date = ""
+                        year = ""
+                        journal_data = article_data.get("Journal", {})
+                        journal_issue = journal_data.get("JournalIssue", {})
+                        pub_date_info = journal_issue.get("PubDate", {})
+                        if pub_date_info:
+                            year = pub_date_info.get("Year", "")
+                            month = pub_date_info.get("Month", "")
+                            day = pub_date_info.get("Day", "")
+                            if year:
+                                if month and day:
+                                    pub_date = f"{year}-{month}-{day}"
+                                elif month:
+                                    pub_date = f"{year}-{month}"
+                                else:
+                                    pub_date = year
+
+                        # Extract DOI
+                        doi = ""
+                        article_id_list = pubmed_data.get("ArticleIdList", [])
+                        if article_id_list:
+                            for aid in article_id_list:
+                                if isinstance(aid, dict) and aid.get("IdType") == "doi":
+                                    doi = aid.get("Id", "")
+                                    break
+
+                        results.append({
+                            "title": title,
+                            "abstract": abstract,
+                            "doi": doi,
+                            "year": year,
+                            "publication_date": pub_date,
+                            "source": "pubmed",
+                            "pmid": str(pmid) if pmid else "",
+                            "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}" if pmid else "",
+                            "authors": authors,
+                            "citation_count": 0,  # PubMed doesn't provide this directly
+                        })
+
+                        if len(results) >= limit:
+                            break
+
+                    break  # Success
+
+                except Exception as e:
+                    last_error = e
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        delay = base_delay * (2 ** retry_count)
+                        log.warning("PubMed EFetch failed (attempt %d/%d), retrying in %.1fs: %s",
+                                   retry_count, max_retries, delay, e)
+                        time.sleep(delay)
+                    else:
+                        log.warning("PubMed EFetch failed after %d retries: %s", max_retries, e)
+
+            if len(results) >= limit:
+                break
+
+    except Exception as e:
+        log.warning("PubMed search failed for query '%s': %s", query, e)
+
+    return results
+
 
 def ingest_into_analysis(memory, paperwork):
     """Compute summary/gap analysis/quality scores and persist them to memory."""
@@ -608,14 +839,23 @@ def stream_papers(
                         except TypeError:
                             papers = cached_semantic_search(query, batch_size)
 
-                    # Europe PMC search (proper full-text search of preprints)
+                    # Europe PMC search (proper full-text search of published papers)
                     epmc_papers = fetch_europepmc_papers(
                         query,
                         limit=batch_size,
                         time_window_months=time_window_months,
                         since_date=since_date,
                     )
-                    papers = (papers or []) + epmc_papers
+
+                    # PubMed search (MEDLINE and other life science literature)
+                    pubmed_papers = fetch_pubmed_papers(
+                        query,
+                        limit=batch_size,
+                        time_window_months=time_window_months,
+                        since_date=since_date,
+                    )
+
+                    papers = (papers or []) + epmc_papers + pubmed_papers
                     total_candidates += len(papers)
 
                     for p in papers:
