@@ -16,7 +16,6 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any, Dict, List
 
 import yaml
@@ -25,9 +24,9 @@ from . import config
 from .research_agent_adaptive import (
     CachedSentenceTransformerEmbeddings,
     cached_semantic_search,
+    get_faiss_store,
 )
 from langchain_community.vectorstores import FAISS
-from langchain_core.documents import Document
 
 log = logging.getLogger("journal_club.recommendations")
 
@@ -262,8 +261,8 @@ def recommend_related_reading(
         log.warning("Semantic search not available for recommendations")
         return []
 
-    title = paper.get("title", "")
-    abstract = paper.get("abstract", "")
+    title = paper.get("title", "") or ""
+    abstract = paper.get("abstract", "") or ""
 
     # Build query from title and key terms
     query = f"{title} {abstract[:200]}"
@@ -272,8 +271,8 @@ def recommend_related_reading(
         related = cached_semantic_search(query, limit=top_k * 2)  # Get more, filter later
 
         # Filter out self
-        doi = paper.get("doi", "").lower()
-        related = [p for p in related if p.get("doi", "").lower() != doi]
+        doi = (paper.get("doi") or "").lower()
+        related = [p for p in related if (p.get("doi") or "").lower() != doi]
 
         return related[:top_k]
 
@@ -293,33 +292,24 @@ def recommend_related_from_faiss(
         return []
 
     try:
-        embeddings = CachedSentenceTransformerEmbeddings()
-        index_path = Path(faiss_index_path)
-
-        if not index_path.exists():
+        db = get_faiss_store(faiss_index_path)
+        if db is None:
             log.warning("FAISS index not found at %s", faiss_index_path)
             return []
 
-        db = FAISS.load_local(
-            str(index_path),
-            embeddings,
-            allow_dangerous_deserialization=True,
-        )
-
-        # Create query document
-        query_text = f"{paper.get('title', '')}\n{paper.get('abstract', '')}"
-        query_doc = Document(page_content=query_text)
+        query_text = f"{paper.get('title', '') or ''}
+{paper.get('abstract', '') or ''}"
 
         # Search
         results = db.similarity_search_with_score(query_text, k=top_k + 10)
 
         # Convert to paper-like dicts, filter self
         related = []
-        seen_dois = {paper.get("doi", "").lower()}
+        seen_dois = {(paper.get("doi") or "").lower()}
 
         for doc, score in results:
             metadata = doc.metadata or {}
-            doi = metadata.get("doi", "").lower()
+            doi = (metadata.get("doi") or "").lower()
 
             if doi and doi in seen_dois:
                 continue
@@ -328,8 +318,8 @@ def recommend_related_from_faiss(
                 seen_dois.add(doi)
 
             related.append({
-                "title": metadata.get("title", ""),
-                "abstract": doc.page_content,
+                "title": metadata.get("title", "") or "",
+                "abstract": doc.page_content or "",
                 "score": float(score),
                 "source": metadata.get("source", "faiss"),
                 "doi": metadata.get("doi"),

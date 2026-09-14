@@ -15,7 +15,7 @@
 ```
 
 The runner loads `.env`, sets defaults (including
-`JOURNAL_CLUB_LITERATURE_MEMORY_PATH=cache/journal_club_memory.db`), and
+`JOURNAL_CLUB_LITERATURE_MEMORY_PATH=literature_memory.db`), and
 limits BLAS threads.
 
 ## Analysis
@@ -34,7 +34,7 @@ Uses each topic's configured domain.
 python scripts/build_faiss_index.py         # rebuild FAISS index from memory
 python scripts/backfill_citations.py        # fetch citation counts (S2 batch)
 python scripts/analyzer_worker.py \
-    --memory-file cache/journal_club_memory.db \
+    --memory-file literature_memory.db \
     --output-dir results/analysis           # isolated per-paper analysis worker
 ```
 
@@ -58,6 +58,8 @@ python core/eval_model.py --base /path/base --merged /path/merged --papers 10
 | `run_test.slurm` | Test run: dedup → streaming → analysis → reports |
 | `run_test_fixed.slurm` | Same with CPU-offload settings |
 | `scripts/run_analyzer_worker.slurm` | Standalone analyzer worker |
+| `scripts/run_training_data.slurm` | Collect training data and convert to HF dataset |
+| `scripts/run_training.slurm` | LoRA fine-tuning (QLoRA) |
 
 Local equivalents: `run_test_local.sh` (dedup → streaming → analysis →
 reports → web) and the log files it produces are gitignored.
